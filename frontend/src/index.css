@@ -1,11 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #aa3bff;
+  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
+  
+  --color-brand-green: #00F5A0;
+  --color-brand-cyan: #00D9FF;
+  --color-brand-accent: #00FFA3;
+  
+  --color-bg-deep: #020404;
+  --color-bg-dark: #050505;
+  --color-bg-surface: #090909;
 }
 
-body {
-  @apply bg-slate-950 text-white font-sans antialiased;
+@layer base {
+  body {
+    @apply bg-[#020404] text-white font-sans antialiased overflow-x-hidden;
+    /* Futuristic ambient background */
+    background-image: 
+      radial-gradient(circle at 50% -20%, rgba(0, 255, 163, 0.15), transparent 40%),
+      radial-gradient(circle at 100% 50%, rgba(0, 217, 255, 0.1), transparent 30%),
+      radial-gradient(circle at 0% 100%, rgba(0, 255, 163, 0.1), transparent 30%);
+    background-color: #020404;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-[#0a0a0a]/70 backdrop-blur-[20px] border border-white/10 rounded-3xl shadow-[0_0_30px_rgba(0,255,163,0.05)] transition-all duration-300;
+  }
+  
+  .glass-card:hover {
+    @apply -translate-y-1 shadow-[0_0_30px_rgba(0,255,163,0.15)] border-white/20;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 255, 163, 0.5);
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 bg-brand-green text-black font-bold rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,255,163,0.4)] hover:shadow-[0_0_30px_rgba(0,255,163,0.6)] hover:scale-105 active:scale-95 flex items-center gap-2;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 bg-transparent border border-white/20 text-white font-semibold rounded-full transition-all duration-300 hover:border-brand-green hover:text-brand-green hover:shadow-[0_0_20px_rgba(0,255,163,0.2)] active:scale-95 flex items-center gap-2;
+  }
 }
 
 /* Custom Scrollbar */
@@ -19,10 +59,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(0, 255, 163, 0.3);
 }

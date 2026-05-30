@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Database, Activity, FileDown, ArrowRight } from 'lucide-react';
+import { Plus, Database, FileDown, ArrowRight, Activity, Users, Target, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 export default function ProjectDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -45,86 +46,254 @@ export default function ProjectDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Your Workspaces</h1>
-          <button 
-            onClick={() => setShowCreate(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-          >
-            <Plus className="mr-2" size={18} />
-            New Project
-          </button>
+    <div className="w-full">
+      {/* Hero Section */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-12 mb-20 mt-10">
+        <motion.div 
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="lg:w-1/2"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10 text-[var(--color-brand-green)] text-xs font-semibold uppercase tracking-wider mb-6">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-brand-green)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-brand-green)]"></span>
+            </span>
+            System Online
+          </div>
+          <h1 className="text-5xl lg:text-7xl font-black mb-6 leading-tight tracking-tighter">
+            AI Co-Pilot for <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500">
+              Customer Churn
+            </span>
+          </h1>
+          <p className="text-slate-400 text-lg mb-10 max-w-lg leading-relaxed">
+            Leverage AI-powered analytics to forecast trends, predict customer behavior strategically, and stay ahead of the market.
+          </p>
+          
+          <div className="flex flex-wrap gap-4 mb-16">
+            <button 
+              onClick={() => setShowCreate(true)}
+              className="btn-primary"
+            >
+              <Plus size={18} />
+              New Workspace
+            </button>
+            <button className="btn-secondary">
+              <Activity size={18} />
+              View Global Analytics
+            </button>
+          </div>
+
+          <div className="flex gap-12 border-t border-white/10 pt-8">
+            <div>
+              <p className="text-slate-500 text-sm mb-1">Customers Analyzed</p>
+              <p className="text-3xl font-bold text-white">2.4M<span className="text-[var(--color-brand-green)]">+</span></p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-sm mb-1">Predictions</p>
+              <p className="text-3xl font-bold text-white">33M<span className="text-[var(--color-brand-green)]">+</span></p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-sm mb-1">Avg Accuracy</p>
+              <p className="text-3xl font-bold text-white">94.2<span className="text-[var(--color-brand-green)]">%</span></p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1 }}
+          className="lg:w-1/2 relative"
+        >
+          {/* Abstract AI Illustration */}
+          <div className="relative w-full aspect-square max-w-lg mx-auto">
+            <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-brand-green)]/20 to-transparent rounded-full blur-3xl mix-blend-screen animate-pulse"></div>
+            
+            <svg viewBox="0 0 400 400" className="w-full h-full relative z-10 drop-shadow-[0_0_15px_rgba(0,255,163,0.3)]">
+              <motion.path 
+                d="M 50,200 C 100,50 300,350 350,200" 
+                fill="none" 
+                stroke="var(--color-brand-green)" 
+                strokeWidth="2"
+                strokeDasharray="10 5"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.path 
+                d="M 50,200 C 150,300 250,100 350,200" 
+                fill="none" 
+                stroke="var(--color-brand-cyan)" 
+                strokeWidth="1"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              />
+              
+              {/* Floating Nodes */}
+              {[
+                { cx: 100, cy: 120, r: 8, delay: 0 },
+                { cx: 300, cy: 280, r: 12, delay: 0.5 },
+                { cx: 200, cy: 200, r: 16, delay: 1 },
+                { cx: 250, cy: 100, r: 6, delay: 1.5 },
+                { cx: 150, cy: 300, r: 10, delay: 2 }
+              ].map((node, i) => (
+                <motion.circle 
+                  key={i}
+                  cx={node.cx} cy={node.cy} r={node.r}
+                  fill="var(--color-bg-deep)"
+                  stroke="var(--color-brand-green)"
+                  strokeWidth="2"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, delay: node.delay, repeat: Infinity }}
+                  className="filter drop-shadow-[0_0_8px_rgba(0,255,163,0.8)]"
+                />
+              ))}
+            </svg>
+
+            {/* Floating Glass Cards */}
+            <motion.div 
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="absolute top-10 right-0 glass-card p-4 flex items-center gap-3 border-[var(--color-brand-green)]/30"
+            >
+              <div className="w-10 h-10 rounded-lg bg-[var(--color-brand-green)]/20 flex items-center justify-center">
+                <Target className="text-[var(--color-brand-green)]" size={20} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Churn Risk</p>
+                <p className="text-lg font-bold text-white">Reduced 40%</p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              animate={{ y: [0, 15, 0] }}
+              transition={{ duration: 5, repeat: Infinity }}
+              className="absolute bottom-20 left-0 glass-card p-4 flex items-center gap-3 border-[var(--color-brand-cyan)]/30"
+            >
+              <div className="w-10 h-10 rounded-lg bg-[var(--color-brand-cyan)]/20 flex items-center justify-center">
+                <ShieldCheck className="text-[var(--color-brand-cyan)]" size={20} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Model Accuracy</p>
+                <p className="text-lg font-bold text-white">Validated</p>
+              </div>
+            </motion.div>
+
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Projects Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="mb-8"
+      >
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight mb-2">Active Workspaces</h2>
+            <p className="text-slate-400">Manage your predictive models and datasets.</p>
+          </div>
         </div>
 
         {showCreate && (
-          <div className="mb-8 p-6 bg-slate-900 border border-slate-800 rounded-xl">
-            <h2 className="text-xl mb-4 font-semibold">Create New Project</h2>
-            <form onSubmit={handleCreateProject} className="flex gap-4">
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-8 glass-card p-8 border-[var(--color-brand-green)]/50 shadow-[0_0_30px_rgba(0,255,163,0.1)]"
+          >
+            <h2 className="text-xl mb-6 font-semibold flex items-center gap-2">
+              <Plus className="text-[var(--color-brand-green)]" />
+              Initialize New Workspace
+            </h2>
+            <form onSubmit={handleCreateProject} className="flex flex-col md:flex-row gap-4">
               <input 
                 type="text" 
-                placeholder="e.g. Q3 SaaS Churn Data"
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+                placeholder="Workspace Name (e.g. Q3 Enterprise Churn)"
+                className="flex-1 bg-black/50 border border-white/10 rounded-xl px-6 py-4 text-white focus:border-[var(--color-brand-green)] focus:ring-1 focus:ring-[var(--color-brand-green)] focus:outline-none transition-all placeholder:text-slate-600"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
               />
-              <button type="submit" className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition">
-                Create
+              <button type="submit" className="btn-primary py-4 px-8 justify-center">
+                Initialize
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition">
+              <button type="button" onClick={() => setShowCreate(false)} className="px-8 py-4 bg-transparent border border-white/10 hover:bg-white/5 rounded-xl transition-colors font-medium text-slate-300">
                 Cancel
               </button>
             </form>
-          </div>
+          </motion.div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map(project => (
-            <div key={project.id} className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition flex flex-col">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold">{project.project_name}</h3>
-                <Database className="text-slate-500" size={20} />
+          {projects.map((project, i) => (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              key={project.id} 
+              className="glass-card p-6 flex flex-col group cursor-pointer"
+              onClick={() => navigate(project.dataset_name ? `/project/${project.id}/dashboard` : `/project/${project.id}/upload`)}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 group-hover:border-[var(--color-brand-green)]/50 group-hover:bg-[var(--color-brand-green)]/10 transition-colors">
+                  <Database className="text-slate-400 group-hover:text-[var(--color-brand-green)] transition-colors" size={24} />
+                </div>
+                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs text-slate-400">
+                  ID: #{project.id.toString().padStart(4, '0')}
+                </div>
               </div>
-              <div className="text-slate-400 text-sm mb-6 flex-1">
+              
+              <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-brand-green)] transition-colors">{project.project_name}</h3>
+              
+              <div className="text-sm mb-8 flex-1">
                 {project.dataset_name ? (
-                  <span className="text-green-400 flex items-center">
-                    <FileDown size={14} className="mr-1" /> Dataset: {project.dataset_name}
+                  <div className="flex items-center text-slate-300 bg-white/5 inline-flex px-3 py-1.5 rounded-lg border border-white/5">
+                    <FileDown size={14} className="mr-2 text-[var(--color-brand-green)]" /> 
+                    <span className="truncate max-w-[200px]">{project.dataset_name}</span>
+                  </div>
+                ) : (
+                  <span className="text-orange-400/80 flex items-center bg-orange-400/10 inline-flex px-3 py-1.5 rounded-lg border border-orange-400/20">
+                    <span className="w-2 h-2 rounded-full bg-orange-400 mr-2 animate-pulse"></span>
+                    Awaiting Dataset
                   </span>
-                ) : (
-                  <span className="text-orange-400">No dataset uploaded yet</span>
                 )}
               </div>
-              <div className="flex justify-between items-center mt-auto border-t border-slate-800 pt-4">
-                <span className="text-xs text-slate-500">Created: {new Date(project.created_at).toLocaleDateString()}</span>
-                {project.dataset_name ? (
-                  <button 
-                    onClick={() => navigate(`/project/${project.id}/dashboard`)}
-                    className="flex items-center text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    Open Dashboard <ArrowRight size={14} className="ml-1" />
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => navigate(`/project/${project.id}/upload`)}
-                    className="flex items-center text-sm text-orange-400 hover:text-orange-300"
-                  >
-                    Upload Data <ArrowRight size={14} className="ml-1" />
-                  </button>
-                )}
+              
+              <div className="flex justify-between items-center mt-auto border-t border-white/10 pt-5">
+                <span className="text-xs text-slate-500 font-mono">{new Date(project.created_at).toLocaleDateString()}</span>
+                <div className="flex items-center text-sm font-semibold text-[var(--color-brand-green)] opacity-0 group-hover:opacity-100 transition-opacity -translate-x-4 group-hover:translate-x-0 duration-300">
+                  {project.dataset_name ? 'Open Analytics' : 'Upload Data'} 
+                  <ArrowRight size={16} className="ml-2" />
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
           
           {projects.length === 0 && !showCreate && (
-            <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-500 bg-slate-900/50 rounded-xl border border-slate-800 border-dashed">
-              <Database size={48} className="mb-4 opacity-50" />
-              <p>You haven't created any projects yet.</p>
-              <button onClick={() => setShowCreate(true)} className="mt-4 text-blue-400 hover:underline">Create your first project</button>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="col-span-full py-24 flex flex-col items-center justify-center glass-card border-dashed border-2 border-white/10 hover:border-[var(--color-brand-green)]/50 transition-colors cursor-pointer"
+              onClick={() => setShowCreate(true)}
+            >
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10">
+                <Plus size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">No Workspaces Found</h3>
+              <p className="text-slate-400 mb-6">Initialize your first workspace to start analyzing churn.</p>
+              <button className="btn-primary">
+                Initialize Workspace
+              </button>
+            </motion.div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
