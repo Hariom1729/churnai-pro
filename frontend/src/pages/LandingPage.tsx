@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BarChart2, ShieldCheck, Zap, BrainCircuit, Activity, Database, Key, Server, Target, Users, PlayCircle, Layers, CheckCircle2 } from "lucide-react";
+import { ArrowRight, BarChart2, ShieldCheck, Zap, BrainCircuit, Activity, Database, Key, Server, Target, Users, PlayCircle, Layers, CheckCircle2, Github, Linkedin, Mail } from "lucide-react";
 
 export default function LandingPage() {
   const isLoggedIn = !!localStorage.getItem("token");
@@ -300,12 +300,23 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-4">Company</h4>
-              <ul className="space-y-3 text-sm text-gray-500">
-                <li className="hover:text-[var(--color-brand-green)] cursor-pointer transition-colors">About Us</li>
-                <li className="hover:text-[var(--color-brand-green)] cursor-pointer transition-colors">Careers</li>
-                <li className="hover:text-[var(--color-brand-green)] cursor-pointer transition-colors">Security</li>
-                <li className="hover:text-[var(--color-brand-green)] cursor-pointer transition-colors">Contact</li>
+              <h4 className="text-white font-bold mb-4">Developer</h4>
+              <ul className="space-y-4 text-sm text-gray-400">
+                <li>
+                  <a href="https://github.com/Hariom1729" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-[var(--color-brand-green)] transition-colors">
+                    <Github size={16} /> GitHub Profile
+                  </a>
+                </li>
+                <li>
+                  <a href="https://linkedin.com/in/hariom1729" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-[var(--color-brand-green)] transition-colors">
+                    <Linkedin size={16} /> LinkedIn
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:contact@hariom1729.com" className="flex items-center gap-2 hover:text-[var(--color-brand-green)] transition-colors">
+                    <Mail size={16} /> Contact Me
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
