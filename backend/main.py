@@ -244,40 +244,71 @@ def get_project_recommendations(project_id: int, db: Session = Depends(get_db), 
         return {"recommendations": []}
         
     try:
+        import google.generativeai as genai
+        import json
+        import os
+        
+        # Configure Gemini with the user-provided API key from environment
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            # Fallback to static if the API key is not set
+            raise Exception("GEMINI_API_KEY environment variable not set")
+            
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
         shap_data = json.loads(project.shap_values)
         top_features = list(shap_data.keys())[:3]
         
-        # Simple heuristic mappings for a generic business context
-        heuristics = {
-            "MonthlyCharges": "Consider introducing flexible pricing tiers or offering targeted discounts to high-risk customers sensitive to price.",
-            "TotalCharges": "High total charge sensitivity indicates loyalty decay. Implement a proactive retention program offering loyalty rewards.",
-            "tenure": "Early-stage drop-off detected. Enhance your onboarding process to ensure customers see value within the first 30 days.",
-            "Contract": "Month-to-month contracts are highly volatile. Incentivize annual plans with a discounted rate.",
-            "InternetService": "Customers are churning based on service type. Investigate fiber/DSL stability and offer free upgrades if necessary.",
-            "PaymentMethod": "Friction in payments detected. Encourage auto-pay setup with a one-time bill credit.",
-            "TechSupport": "Lack of support correlates with churn. Proactively reach out to users with poor engagement or offer premium support bundles."
-        }
-        
         recs = []
-        for feat in top_features:
-            # Check if any known heuristic substring matches the feature name
-            matched = False
-            for key, rec_text in heuristics.items():
-                if key.lower() in feat.lower():
-                    recs.append({"feature": feat, "action": rec_text})
-                    matched = True
-                    break
-            
-            if not matched:
+        
+        # Instead of static heuristics, we prompt Gemini for strategic recommendations
+        prompt = f"""
+You are an expert AI business strategist analyzing customer churn.
+The top 3 features driving churn for this dataset are: {', '.join(top_features)}.
+For each feature, provide a 1-2 sentence actionable business strategy on how to optimize it to reduce churn.
+Format the output EXACTLY as a JSON array of objects, where each object has:
+- "feature": the exact name of the feature
+- "action": the actionable strategy text
+No markdown blocks, just raw JSON.
+        """
+        
+        response = model.generate_content(prompt)
+        # Parse the JSON response
+        try:
+            # Strip out markdown formatting if any was included accidentally
+            text = response.text.strip()
+            if text.startswith('```json'):
+                text = text[7:]
+            if text.startswith('```'):
+                text = text[3:]
+            if text.endswith('```'):
+                text = text[:-3]
+                
+            dynamic_recs = json.loads(text.strip())
+            return {"recommendations": dynamic_recs}
+        except Exception as e:
+            print("Failed to parse Gemini response:", e, "Raw:", response.text)
+            # Fallback to generic if parsing fails
+            for feat in top_features:
                 recs.append({
                     "feature": feat, 
                     "action": f"The feature '{feat}' is a primary driver of churn. We recommend auditing this segment closely to identify friction points."
                 })
-                
-        return {"recommendations": recs}
-        
+            return {"recommendations": recs}
+            
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to generate recommendations")
+        print("Gemini API Error:", e)
+        # Fallback to static if the API call fails
+        shap_data = json.loads(project.shap_values)
+        top_features = list(shap_data.keys())[:3]
+        recs = []
+        for feat in top_features:
+            recs.append({
+                "feature": feat, 
+                "action": f"The feature '{feat}' is a primary driver of churn. We recommend auditing this segment closely to identify friction points."
+            })
+        return {"recommendations": recs}
 
 @app.get("/api/projects/{project_id}/export")
 def export_predictions(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
