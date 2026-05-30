@@ -12,6 +12,9 @@ export default function AuthPage({ isLogin = true }: { isLogin?: boolean }) {
     // TODO: Implement Firebase Auth logic here
     console.log("Mock Auth Attempt:", { email, password });
     
+    // Set the mock token that the FastAPI backend is expecting
+    localStorage.setItem('token', 'mock-jwt-token');
+    
     // Simulate successful login/register
     alert("Mock Auth Successful! Navigating to Dashboard.");
     navigate("/dashboard");

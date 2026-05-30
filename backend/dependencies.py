@@ -9,16 +9,8 @@ import os
 
 security = HTTPBearer()
 
-# Initialize Firebase Admin (Only if credentials exist)
-try:
-    if not firebase_admin._apps:
-        # For production, use credentials.Certificate('path/to/serviceAccountKey.json')
-        # For development without keys, we will mock the auth if no default app can initialize
-        firebase_admin.initialize_app()
-    FIREBASE_ENABLED = True
-except ValueError:
-    FIREBASE_ENABLED = False
-    print("Warning: Firebase Admin SDK not initialized. Using Mock Auth.")
+FIREBASE_ENABLED = False
+print("Using Mock Auth (Firebase disabled).")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
