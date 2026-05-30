@@ -24,7 +24,7 @@ async def run_automl_pipeline(project_id: int, dataset_name: str, target_column:
             await send_progress_update(project_id, {"status": "Error: Dataset not found", "progress": 0, "error": True})
             return
 
-        df = pd.read_csv(file_path)
+        df = await asyncio.to_thread(pd.read_csv, file_path)
         await send_progress_update(project_id, {"status": "Dataset loaded. Preprocessing data...", "progress": 15})
 
         # Ensure target column exists
@@ -93,15 +93,18 @@ async def run_automl_pipeline(project_id: int, dataset_name: str, target_column:
         for name, clf in models_to_train.items():
             await send_progress_update(project_id, {"status": f"Training {name}...", "progress": int(current_progress)})
             
-            clf.fit(X_train, y_train)
-            y_pred = clf.predict(X_test)
-            y_proba = clf.predict_proba(X_test)[:, 1] if hasattr(clf, "predict_proba") else None
+            await asyncio.to_thread(clf.fit, X_train, y_train)
+            y_pred = await asyncio.to_thread(clf.predict, X_test)
+            
+            def get_proba():
+                return clf.predict_proba(X_test)[:, 1] if hasattr(clf, "predict_proba") else None
+            y_proba = await asyncio.to_thread(get_proba)
 
             # Calculate metrics
             acc = accuracy_score(y_test, y_pred)
-            prec = precision_score(y_test, y_pred, zero_division=0)
-            rec = recall_score(y_test, y_pred, zero_division=0)
-            f1 = f1_score(y_test, y_pred, zero_division=0)
+            prec = precision_score(y_test, y_pred, zero_division=0, average='weighted')
+            rec = recall_score(y_test, y_pred, zero_division=0, average='weighted')
+            f1 = f1_score(y_test, y_pred, zero_division=0, average='weighted')
             
             try:
                 auc = roc_auc_score(y_test, y_proba) if y_proba is not None else None
