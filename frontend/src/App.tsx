@@ -129,7 +129,7 @@ function AnimatedRoutes() {
             </motion.div>
           </ProtectedRoute>
         } />
-        <Route path="/project/:id" element={
+        <Route path="/project/:id/dashboard" element={
           <ProtectedRoute>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
               <DataAnalysis />
