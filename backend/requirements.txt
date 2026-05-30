@@ -83,3 +83,5 @@ urllib3==2.7.0
 uvicorn==0.48.0
 websockets==16.0
 xgboost==3.2.0
+google-generativeai==0.8.6
+python-dotenv==1.2.2
