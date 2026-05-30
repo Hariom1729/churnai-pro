@@ -55,7 +55,7 @@ def assistant_chat(req: ChatRequest, db: Session = Depends(get_db), current_user
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable not set")
         
     genai.configure(api_key=api_key)
-    projects = db.query(models.Project).filter(models.Project.owner_id == current_user.id).all()
+    projects = db.query(models.Project).filter(models.Project.user_id == current_user.id).all()
     context = f"You are ChurnAI, an expert data science assistant. The user has {len(projects)} datasets uploaded."
     for p in projects:
         context += f"\n- Dataset '{p.dataset_name}': predicting '{p.target_column}'."
