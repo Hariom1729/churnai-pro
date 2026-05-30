@@ -11,19 +11,21 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
-from database import db
+from database import get_db, get_fs
 from bson import ObjectId
 
 async def run_automl_pipeline(project_id: str, dataset_name: str, target_column: str, send_progress_update):
     try:
-        await send_progress_update(project_id, {"status": "Starting AutoML...", "progress": 5})
+        db = get_db()
+        project = db.projects.find_one({"_id": ObjectId(project_id)})
+        if not project or not project.get("dataset_file_id"):
+            raise ValueError("Dataset not found")
         
-        file_path = f"uploads/project_{project_id}_{dataset_name}"
-        if not os.path.exists(file_path):
-            await send_progress_update(project_id, {"status": "Error: Dataset not found", "progress": 0, "error": True})
-            return
-
-        df = await asyncio.to_thread(pd.read_csv, file_path)
+        fs = get_fs()
+        
+        await send_progress_update(project_id, {"status": "Loading dataset...", "progress": 5})
+        grid_out = fs.get(ObjectId(project["dataset_file_id"]))
+        df = await asyncio.to_thread(pd.read_csv, grid_out)
         await send_progress_update(project_id, {"status": "Dataset loaded. Preprocessing data...", "progress": 15})
 
         if target_column not in df.columns:
@@ -194,11 +196,14 @@ async def predict_single_row(project_id: str, dataset_name: str, target_column: 
     import shap
     
     try:
-        file_path = f"uploads/project_{project_id}_{dataset_name}"
-        if not os.path.exists(file_path):
-            raise Exception("Dataset not found")
-
-        df = await asyncio.to_thread(pd.read_csv, file_path)
+        db = get_db()
+        project = db.projects.find_one({"_id": ObjectId(project_id)})
+        if not project or not project.get("dataset_file_id"):
+            raise ValueError("Dataset not found")
+            
+        fs = get_fs()
+        grid_out = fs.get(ObjectId(project["dataset_file_id"]))
+        df = await asyncio.to_thread(pd.read_csv, grid_out)
         
         if target_column not in df.columns:
             raise Exception(f"Target column '{target_column}' not found")
@@ -271,11 +276,14 @@ async def predict_single_row(project_id: str, dataset_name: str, target_column: 
 
 async def predict_batch(project_id: str, dataset_name: str, target_column: str, model_path: str):
     try:
-        file_path = f"uploads/project_{project_id}_{dataset_name}"
-        if not os.path.exists(file_path):
-            raise Exception("Dataset not found")
-
-        df = await asyncio.to_thread(pd.read_csv, file_path)
+        db = get_db()
+        project = db.projects.find_one({"_id": ObjectId(project_id)})
+        if not project or not project.get("dataset_file_id"):
+            raise ValueError("Dataset not found")
+            
+        fs = get_fs()
+        grid_out = fs.get(ObjectId(project["dataset_file_id"]))
+        df = await asyncio.to_thread(pd.read_csv, grid_out)
         
         X_df = df.copy()
         for col in X_df.columns:

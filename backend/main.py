@@ -5,7 +5,7 @@ import json
 import asyncio
 from pydantic import BaseModel
 from automl import run_automl_pipeline
-from database import get_db
+from database import get_db, get_fs
 import schemas
 from dependencies import get_current_user
 from bson import ObjectId
@@ -119,11 +119,6 @@ def create_project(project: schemas.ProjectCreate, db = Depends(get_db), current
     created_project["id"] = created_project["_id"]
     return created_project
 
-import shutil
-import os
-
-os.makedirs("uploads", exist_ok=True)
-
 @app.post("/api/projects/{project_id}/upload")
 def upload_dataset(project_id: str, file: UploadFile = File(...), db = Depends(get_db), current_user: dict = Depends(get_current_user)):
     project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
@@ -133,24 +128,31 @@ def upload_dataset(project_id: str, file: UploadFile = File(...), db = Depends(g
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
 
-    file_location = f"uploads/project_{project_id}_{file.filename}"
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    fs = get_fs()
+    # Delete old file if exists
+    if project.get("dataset_file_id"):
+        try:
+            fs.delete(ObjectId(project["dataset_file_id"]))
+        except:
+            pass
+
+    file_id = fs.put(file.file, filename=file.filename, project_id=project_id)
         
-    db.projects.update_one({"_id": ObjectId(project_id)}, {"$set": {"dataset_name": file.filename}})
+    db.projects.update_one({"_id": ObjectId(project_id)}, {"$set": {"dataset_name": file.filename, "dataset_file_id": str(file_id)}})
     
-    return {"info": f"file '{file.filename}' saved at '{file_location}'"}
+    return {"info": f"file '{file.filename}' saved to GridFS"}
 
 @app.get("/api/projects/{project_id}/columns")
 def get_dataset_columns(project_id: str, db = Depends(get_db), current_user: dict = Depends(get_current_user)):
     project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
-    if not project or not project.get("dataset_name"):
+    if not project or not project.get("dataset_file_id"):
         raise HTTPException(status_code=404, detail="Dataset not found")
         
-    file_location = f"uploads/project_{project_id}_{project['dataset_name']}"
     import pandas as pd
     try:
-        df = pd.read_csv(file_location, nrows=0)
+        fs = get_fs()
+        grid_out = fs.get(ObjectId(project["dataset_file_id"]))
+        df = pd.read_csv(grid_out, nrows=0)
         return {"columns": list(df.columns)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -158,13 +160,14 @@ def get_dataset_columns(project_id: str, db = Depends(get_db), current_user: dic
 @app.get("/api/projects/{project_id}/data")
 def get_dataset_data(project_id: str, db = Depends(get_db), current_user: dict = Depends(get_current_user)):
     project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
-    if not project or not project.get("dataset_name"):
+    if not project or not project.get("dataset_file_id"):
         raise HTTPException(status_code=404, detail="Dataset not found")
         
-    file_location = f"uploads/project_{project_id}_{project['dataset_name']}"
     import pandas as pd
     try:
-        df = pd.read_csv(file_location, nrows=5000)
+        fs = get_fs()
+        grid_out = fs.get(ObjectId(project["dataset_file_id"]))
+        df = pd.read_csv(grid_out, nrows=5000)
         df = df.replace({pd.NA: None, pd.NaT: None, float('nan'): None})
         return {"data": df.to_dict(orient="records")}
     except Exception as e:
@@ -390,7 +393,7 @@ def export_predictions(project_id: str, db = Depends(get_db), current_user: dict
     from sklearn.preprocessing import StandardScaler
     
     project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
-    if not project or not project.get("dataset_name"):
+    if not project or not project.get("dataset_file_id"):
         raise HTTPException(status_code=404, detail="Project not found")
         
     best_model_record = db.models.find_one({"project_id": project_id, "is_active": True})
@@ -401,8 +404,9 @@ def export_predictions(project_id: str, db = Depends(get_db), current_user: dict
     
     if not os.path.exists(export_path):
         try:
-            file_path = f"uploads/project_{project_id}_{project['dataset_name']}"
-            df = pd.read_csv(file_path)
+            fs = get_fs()
+            grid_out = fs.get(ObjectId(project["dataset_file_id"]))
+            df = pd.read_csv(grid_out)
             
             target_column = project["target_column"]
             if target_column in df.columns:

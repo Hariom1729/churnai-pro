@@ -9,9 +9,10 @@ interface DataExplorerProps {
   projectId: string;
   columns: string[];
   targetColumn?: string;
+  showSimulateMode?: boolean;
 }
 
-export default function DataExplorer({ projectId, columns, targetColumn }: DataExplorerProps) {
+export default function DataExplorer({ projectId, columns, targetColumn, showSimulateMode = true }: DataExplorerProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -125,7 +126,7 @@ export default function DataExplorer({ projectId, columns, targetColumn }: DataE
           <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
             <thead className="bg-black/80 backdrop-blur-xl sticky top-0 z-30 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]">
               <tr>
-                {targetColumn && <th className="px-6 py-4 border-b border-white/10 w-24">Action</th>}
+                {targetColumn && showSimulateMode && <th className="px-6 py-4 border-b border-white/10 w-24">Action</th>}
                 <th className="px-6 py-4 border-b border-white/10 w-10"></th>
                 {columns.map(col => (
                   <th key={col} className="px-6 py-4 font-bold text-slate-200 border-b border-white/10 tracking-wide">
@@ -158,7 +159,7 @@ export default function DataExplorer({ projectId, columns, targetColumn }: DataE
                   onMouseEnter={() => setHoveredRow(idx)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
-                  {targetColumn && (
+                  {targetColumn && showSimulateMode && (
                     <td className="px-6 py-4 text-center border-r border-white/5">
                       <button 
                         onClick={() => setSelectedRowData(row)}
