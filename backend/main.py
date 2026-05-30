@@ -50,9 +50,9 @@ def assistant_chat(req: ChatRequest, db: Session = Depends(get_db), current_user
     from dotenv import load_dotenv
     load_dotenv()
     
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = current_user.gemini_api_key or os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable not set")
+        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
         
     genai.configure(api_key=api_key)
     projects = db.query(models.Project).filter(models.Project.user_id == current_user.id).all()
@@ -81,6 +81,16 @@ def assistant_chat(req: ChatRequest, db: Session = Depends(get_db), current_user
 
 @app.get("/api/users/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+@app.put("/api/users/me", response_model=schemas.UserResponse)
+def update_user_me(user_update: schemas.UserUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if user_update.name is not None:
+        current_user.name = user_update.name
+    if user_update.gemini_api_key is not None:
+        current_user.gemini_api_key = user_update.gemini_api_key
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 @app.get("/api/projects", response_model=list[schemas.ProjectResponse])
@@ -220,6 +230,12 @@ def get_project_models(project_id: int, db: Session = Depends(get_db), current_u
     project_models = db.query(models.Model).filter(models.Model.project_id == project_id).all()
     return project_models
 
+@app.get("/api/models", response_model=list[schemas.ModelResponse])
+def get_all_models(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    user_projects = db.query(models.Project.id).filter(models.Project.user_id == current_user.id).subquery()
+    all_models = db.query(models.Model).filter(models.Model.project_id.in_(user_projects)).order_by(models.Model.accuracy.desc()).all()
+    return all_models
+
 @app.get("/api/projects/{project_id}/shap")
 def get_project_shap_values(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     # Verify ownership
@@ -248,6 +264,28 @@ async def api_predict_row(project_id: int, request: PredictRowRequest, db: Sessi
         raise HTTPException(status_code=404, detail="Project or dataset not found")
         
     from automl import predict_single_row
+from fastapi.responses import Response
+
+@app.get("/api/models/{model_id}/predict_batch")
+async def api_predict_batch(model_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Verify ownership
+    model = db.query(models.Model).filter(models.Model.id == model_id).first()
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
+        
+    project = db.query(models.Project).filter(models.Project.id == model.project_id, models.Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+        
+    from automl import predict_batch
+    try:
+        csv_data = await predict_batch(project.id, project.dataset_name, project.target_column, model.model_path)
+        return Response(content=csv_data, media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=predictions_model_{model_id}.csv"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
     try:
         result = await predict_single_row(
             project_id=project_id, 
@@ -300,10 +338,9 @@ def get_project_recommendations(project_id: int, db: Session = Depends(get_db), 
 
         
         # Configure Gemini with the user-provided API key from environment
-        api_key = os.environ.get("GEMINI_API_KEY")
+        api_key = current_user.gemini_api_key or os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            # Fallback to static if the API key is not set
-            raise Exception("GEMINI_API_KEY environment variable not set")
+            raise Exception("Gemini API Key not configured")
             
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-2.5-flash')

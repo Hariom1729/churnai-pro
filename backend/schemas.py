@@ -12,7 +12,12 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    gemini_api_key: Optional[str] = None
     created_at: datetime
+    
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    gemini_api_key: Optional[str] = None
     
     class Config:
         from_attributes = True

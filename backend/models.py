@@ -10,6 +10,7 @@ class User(Base):
     firebase_uid = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    gemini_api_key = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     projects = relationship("Project", back_populates="owner")

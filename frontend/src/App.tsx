@@ -9,6 +9,11 @@ import ProjectDashboard from "./pages/ProjectDashboard";
 import UploadData from "./pages/UploadData";
 import DataAnalysis from "./pages/DataAnalysis";
 import Leaderboard from "./pages/Leaderboard";
+import Assistant from "./pages/Assistant";
+import Datasets from "./pages/Datasets";
+import Models from "./pages/Models";
+import Predictions from "./pages/Predictions";
+import Settings from "./pages/Settings";
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -116,12 +121,31 @@ function AnimatedRoutes() {
             <Leaderboard />
           </motion.div>
         } />
-        {/* Placeholder routes for the top nav */}
-        <Route path="/datasets" element={<Navigate to="/dashboard" />} />
-        <Route path="/models" element={<Navigate to="/dashboard" />} />
-        <Route path="/predictions" element={<Navigate to="/dashboard" />} />
-        <Route path="/assistant" element={<Navigate to="/dashboard" />} />
-        <Route path="/settings" element={<Navigate to="/dashboard" />} />
+        <Route path="/assistant" element={
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+            <Assistant />
+          </motion.div>
+        } />
+        <Route path="/datasets" element={
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+            <Datasets />
+          </motion.div>
+        } />
+        <Route path="/models" element={
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+            <Models />
+          </motion.div>
+        } />
+        <Route path="/predictions" element={
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+            <Predictions />
+          </motion.div>
+        } />
+        <Route path="/settings" element={
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+            <Settings />
+          </motion.div>
+        } />
         
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

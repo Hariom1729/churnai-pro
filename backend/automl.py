@@ -337,3 +337,54 @@ async def predict_single_row(project_id: int, dataset_name: str, target_column: 
         
     finally:
         db.close()
+
+async def predict_batch(project_id: int, dataset_name: str, target_column: str, model_path: str):
+    db = SessionLocal()
+    try:
+        file_path = f"uploads/project_{project_id}_{dataset_name}"
+        if not os.path.exists(file_path):
+            raise Exception("Dataset not found")
+
+        df = await asyncio.to_thread(pd.read_csv, file_path)
+        
+        # Drop ID-like columns
+        X_df = df.copy()
+        for col in X_df.columns:
+            if X_df[col].dtype == 'object' and X_df[col].nunique() > len(X_df) * 0.5:
+                X_df = X_df.drop(col, axis=1)
+                
+        X = X_df.drop(target_column, axis=1, errors='ignore')
+        
+        # Preprocessing
+        numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns
+        categorical_cols = X.select_dtypes(include=['object', 'category', 'bool']).columns
+
+        if len(numeric_cols) > 0:
+            num_imputer = SimpleImputer(strategy='median')
+            X[numeric_cols] = num_imputer.fit_transform(X[numeric_cols])
+            scaler = StandardScaler()
+            X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
+
+        if len(categorical_cols) > 0:
+            cat_imputer = SimpleImputer(strategy='most_frequent')
+            X[categorical_cols] = cat_imputer.fit_transform(X[categorical_cols])
+            X = pd.get_dummies(X, columns=categorical_cols, drop_first=True)
+            
+        expected_columns = joblib.load(f"saved_models/project_{project_id}_columns.joblib")
+        for col in expected_columns:
+            if col not in X.columns:
+                X[col] = 0
+        X = X[expected_columns]
+        
+        clf = joblib.load(model_path)
+        
+        probas = clf.predict_proba(X)[:, 1] if hasattr(clf, "predict_proba") else clf.predict(X)
+        preds = clf.predict(X)
+        
+        df['predicted_class'] = preds
+        df['prediction_probability'] = probas
+        
+        return df.to_csv(index=False)
+    finally:
+        db.close()
+
