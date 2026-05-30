@@ -143,6 +143,48 @@ async def run_automl_pipeline(project_id: int, dataset_name: str, target_column:
         # 4. Set Best Model to Active
         best_model = max(trained_model_results, key=lambda x: x.f1_score or 0)
         best_model.is_active = True
+        
+        # 5. Calculate SHAP values for Explainability (Phase 4)
+        await send_progress_update(project_id, {"status": "Calculating SHAP Explanations...", "progress": 95})
+        import shap
+        import json
+        
+        best_clf = models_to_train[best_model.model_name]
+        
+        # Subsample for speed
+        X_shap = X_test.sample(min(len(X_test), 500), random_state=42)
+        
+        try:
+            # TreeExplainer works for all our models (RF, XGB, LGBM, CatBoost)
+            explainer = shap.TreeExplainer(best_clf)
+            shap_values = explainer.shap_values(X_shap)
+            
+            # For some models/versions, shap_values is a list (multiclass or binary), for others it's an array.
+            if isinstance(shap_values, list):
+                shap_values = shap_values[1] if len(shap_values) > 1 else shap_values[0]
+            elif len(shap_values.shape) == 3:
+                # Handle SHAP versions that return 3D arrays for multiclass/binary
+                shap_values = shap_values[:, :, 1]
+            
+            # Calculate mean absolute SHAP value for each feature
+            mean_shap = np.abs(shap_values).mean(axis=0)
+            
+            # Create a dictionary mapping feature names to their importance
+            feature_importance = {col: float(val) for col, val in zip(X.columns, mean_shap)}
+            
+            # Sort by importance
+            sorted_importance = dict(sorted(feature_importance.items(), key=lambda item: item[1], reverse=True))
+            
+            # Store in the project table
+            project = db.query(db_models.Project).filter(db_models.Project.id == project_id).first()
+            if project:
+                project.shap_values = json.dumps(sorted_importance)
+                
+        except Exception as shap_e:
+            print(f"SHAP calculation failed: {shap_e}")
+            # Don't fail the whole pipeline if SHAP fails
+            pass
+            
         db.commit()
 
         # Save the preprocessor metadata/scaler (simplified for this scope, just saving X columns to use later)

@@ -3,32 +3,46 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Activity, CheckCircle2, Circle, ChevronRight, BarChart2 } from 'lucide-react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 
 export default function Leaderboard() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [models, setModels] = useState<any[]>([]);
+  const [shapData, setShapData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchModels = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:8000/api/projects/${id}/models`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const headers = { Authorization: `Bearer ${token}` };
         
-        // Sort by F1 Score descending
-        const sorted = res.data.sort((a: any, b: any) => b.f1_score - a.f1_score);
+        const modelsRes = await axios.get(`http://localhost:8000/api/projects/${id}/models`, { headers });
+        const sorted = modelsRes.data.sort((a: any, b: any) => b.f1_score - a.f1_score);
         setModels(sorted);
+        
+        try {
+          const shapRes = await axios.get(`http://localhost:8000/api/projects/${id}/shap`, { headers });
+          if (shapRes.data.shap_values) {
+            const shapArray = Object.entries(shapRes.data.shap_values).map(([name, value]) => ({
+              name,
+              value: Number(value)
+            })).slice(0, 10);
+            setShapData(shapArray);
+          }
+        } catch (shapErr) {
+          console.error('Error fetching SHAP values:', shapErr);
+        }
+        
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching models:', err);
+        console.error('Error fetching data:', err);
         setLoading(false);
       }
     };
     
-    fetchModels();
+    fetchData();
   }, [id]);
 
   return (
@@ -167,20 +181,44 @@ export default function Leaderboard() {
         </motion.div>
       )}
 
-      {/* Phase 4 Explainability Teaser Slot */}
-      {models.length > 0 && (
+      {/* Phase 4 Explainability Teaser Slot -> Real SHAP Values */}
+      {models.length > 0 && shapData.length > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-          className="mt-20 p-8 rounded-3xl border border-white/5 bg-gradient-to-b from-white/5 to-transparent relative overflow-hidden"
+          className="mt-20 p-8 rounded-3xl border border-white/5 bg-gradient-to-b from-white/5 to-transparent relative overflow-hidden glass-card"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-brand-cyan)]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="relative z-10">
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <BarChart2 className="text-[var(--color-brand-cyan)]" /> Feature Impact Analytics (SHAP)
+            <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+              <div className="p-2 bg-[var(--color-brand-cyan)]/10 rounded-lg">
+                <BarChart2 className="text-[var(--color-brand-cyan)]" size={24} />
+              </div>
+              Feature Impact Analytics (SHAP)
             </h3>
-            <p className="text-slate-400 max-w-2xl">
-              Model explainability and individual feature impact charts will be generated here in Phase 4, allowing you to interpret exactly why the AI makes specific predictions.
+            <p className="text-slate-400 max-w-2xl mb-8">
+              This chart displays the global importance of each feature for the top performing model, calculated using SHAP (SHapley Additive exPlanations). Longer bars indicate features that most heavily influence the AI's churn predictions.
             </p>
+            
+            <div className="h-96 w-full mt-6 bg-black/20 p-6 rounded-2xl border border-white/5">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={shapData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
+                  <XAxis type="number" stroke="#ffffff40" fontSize={12} tickFormatter={(val) => val.toFixed(2)} />
+                  <YAxis dataKey="name" type="category" stroke="#ffffff80" fontSize={12} width={100} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#050505', borderColor: '#ffffff20', borderRadius: '12px' }}
+                    itemStyle={{ color: '#00F5A0', fontWeight: 'bold' }}
+                    labelStyle={{ color: '#ffffff80', marginBottom: '4px' }}
+                    formatter={(value: number) => [value.toFixed(4), 'Mean Absolute SHAP']}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                    {shapData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--color-brand-green)' : 'var(--color-brand-cyan)'} fillOpacity={0.8 + (0.2 * (1 - index/10))} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </motion.div>
       )}

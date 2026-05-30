@@ -170,3 +170,20 @@ def get_project_models(project_id: int, db: Session = Depends(get_db), current_u
         
     project_models = db.query(models.Model).filter(models.Model.project_id == project_id).all()
     return project_models
+
+@app.get("/api/projects/{project_id}/shap")
+def get_project_shap_values(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Verify ownership
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if not project.shap_values:
+        return {"shap_values": None}
+        
+    import json
+    try:
+        shap_data = json.loads(project.shap_values)
+        return {"shap_values": shap_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to parse SHAP values")
