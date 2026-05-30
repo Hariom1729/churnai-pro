@@ -68,7 +68,7 @@ export default function LandingPage() {
                 <Link to="/register" className="btn-primary text-lg px-10 py-4 w-full sm:w-auto justify-center">
                   Deploy Workspace <ArrowRight size={20} className="ml-2" />
                 </Link>
-                <Link to="/login" className="btn-secondary text-lg px-10 py-4 w-full sm:w-auto justify-center">
+                <Link to="/docs" className="btn-secondary text-lg px-10 py-4 w-full sm:w-auto justify-center">
                   View Documentation
                 </Link>
               </>

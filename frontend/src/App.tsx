@@ -14,6 +14,7 @@ import Datasets from "./pages/Datasets";
 import Models from "./pages/Models";
 import Predictions from "./pages/Predictions";
 import Settings from "./pages/Settings";
+import Documentation from "./pages/Documentation";
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -120,6 +121,11 @@ function AnimatedRoutes() {
         <Route path="/register" element={
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AuthPage isLogin={false} />
+          </motion.div>
+        } />
+        <Route path="/docs" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Documentation />
           </motion.div>
         } />
         <Route path="/dashboard" element={
