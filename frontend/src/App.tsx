@@ -1,6 +1,6 @@
 import React, { useEffect, useState, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from "react-router-dom";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./firebase";
 import { AnimatePresence, motion } from "framer-motion";
 import { BrainCircuit, LayoutDashboard, Database, Activity, BarChart3, Settings as SettingsIcon, Bot, LogOut } from "lucide-react";

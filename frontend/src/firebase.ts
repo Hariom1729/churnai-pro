@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
@@ -11,6 +11,15 @@ const firebaseConfig = {
   measurementId: "G-LQLLWNXQ6B"
 };
 
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if it hasn't been initialized
+let app;
+try {
+  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+} catch (error) {
+  console.error("Firebase initialization error", error);
+  // Fallback to empty app to prevent crash
+  app = {} as any; 
+}
+
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
