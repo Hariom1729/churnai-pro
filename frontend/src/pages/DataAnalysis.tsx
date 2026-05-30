@@ -13,12 +13,26 @@ export default function DataAnalysis() {
   const [progress, setProgress] = useState<{status: string, progress: number, error?: boolean, done?: boolean} | null>(null);
 
   useEffect(() => {
-    // Initial mock column loading
-    setTimeout(() => {
-      setColumns(['CustomerID', 'Age', 'TenureMonths', 'MonthlyCharge', 'TotalCharge', 'SupportTickets', 'Churn']);
-      setTargetColumn('Churn');
-      setLoading(false);
-    }, 1500);
+    const fetchColumns = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`http://localhost:8000/api/projects/${id}/columns`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        setColumns(res.data.columns);
+        // Auto-select 'Churn' if it exists in the dynamically loaded columns, otherwise leave blank
+        if (res.data.columns.includes('Churn')) {
+          setTargetColumn('Churn');
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch columns', err);
+        setLoading(false);
+      }
+    };
+    
+    fetchColumns();
   }, [id]);
 
   const handleStartTraining = async () => {
