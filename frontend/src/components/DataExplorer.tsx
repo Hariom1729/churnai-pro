@@ -153,7 +153,7 @@ export default function DataExplorer({ projectId, columns, targetColumn }: DataE
               {filteredData.slice(0, 100).map((row, idx) => (
                 <tr 
                   key={idx} 
-                  className="transition-all duration-200 hover:bg-[var(--color-brand-cyan)]/5 hover:shadow-[inset_4px_0_0_0_var(--color-brand-cyan)] cursor-crosshair"
+                  className="group transition-all duration-200 hover:bg-[var(--color-brand-cyan)]/5 hover:shadow-[inset_4px_0_0_0_var(--color-brand-cyan)] cursor-crosshair"
                   onMouseEnter={() => setHoveredRow(idx)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >

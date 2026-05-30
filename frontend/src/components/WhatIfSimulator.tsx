@@ -116,7 +116,7 @@ export default function WhatIfSimulator({ projectId, targetColumn, initialRowDat
                       <Tooltip 
                         contentStyle={{ backgroundColor: '#050505', borderColor: '#ffffff20', borderRadius: '8px' }}
                         itemStyle={{ color: '#00F5A0', fontWeight: 'bold' }}
-                        formatter={(value: number) => [value.toFixed(4), 'Impact']}
+                        formatter={(value: any) => [Number(value).toFixed(4), 'Impact']}
                       />
                       <ReferenceLine x={0} stroke="#ffffff40" />
                       <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16}>

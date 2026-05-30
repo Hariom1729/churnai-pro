@@ -1,30 +1,29 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import firebase_admin
-from firebase_admin import auth
-
-# Initialize Firebase Admin without credentials (only works for token verification with project ID)
-try:
-    firebase_admin.get_app()
-except ValueError:
-    firebase_admin.initialize_app(options={'projectId': 'chrunai-prediction'})
-
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from database import get_db
 import os
 
 security = HTTPBearer()
 
 FIREBASE_ENABLED = True
-print("Using Firebase Auth for Authentication.")
+print("Using google-auth for Firebase ID token verification.")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     
     try:
-        decoded_token = auth.verify_id_token(token)
+        decoded_token = id_token.verify_firebase_token(
+            token,
+            google_requests.Request(),
+            audience="chrunai-prediction"
+        )
         return decoded_token
     except Exception as e:
-        print(f"Token verification error: {str(e)}")
+        with open("backend_error.log", "a") as f:
+            f.write(f"Token verification error: {str(e)}\n")
+            f.write(f"Token received: {token[:10]}...\n")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid authentication credentials: {str(e)}",
@@ -32,7 +31,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         )
 
 def get_current_user(decoded_token: dict = Depends(verify_token), db = Depends(get_db)):
-    firebase_uid = decoded_token.get("uid")
+    firebase_uid = decoded_token.get("uid") or decoded_token.get("sub") or decoded_token.get("user_id")
     email = decoded_token.get("email")
     name = decoded_token.get("name", "New User")
     

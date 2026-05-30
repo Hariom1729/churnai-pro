@@ -76,6 +76,7 @@ def assistant_chat(req: ChatRequest, db = Depends(get_db), current_user: dict = 
 @app.get("/api/users/me")
 def read_users_me(current_user: dict = Depends(get_current_user)):
     current_user["_id"] = str(current_user["_id"])
+    current_user["id"] = current_user["_id"]
     return current_user
 
 @app.put("/api/users/me")
@@ -91,6 +92,7 @@ def update_user_me(user_update: schemas.UserUpdate, db = Depends(get_db), curren
         
     updated_user = db.users.find_one({"_id": current_user["_id"]})
     updated_user["_id"] = str(updated_user["_id"])
+    updated_user["id"] = updated_user["_id"]
     return updated_user
 
 @app.get("/api/projects")
@@ -98,6 +100,7 @@ def get_projects(db = Depends(get_db), current_user: dict = Depends(get_current_
     projects = list(db.projects.find({"user_id": str(current_user["_id"])}))
     for p in projects:
         p["_id"] = str(p["_id"])
+        p["id"] = p["_id"]
     return projects
 
 @app.post("/api/projects")
@@ -113,6 +116,7 @@ def create_project(project: schemas.ProjectCreate, db = Depends(get_db), current
     result = db.projects.insert_one(new_project)
     created_project = db.projects.find_one({"_id": result.inserted_id})
     created_project["_id"] = str(created_project["_id"])
+    created_project["id"] = created_project["_id"]
     return created_project
 
 import shutil
@@ -229,6 +233,7 @@ def get_project_models(project_id: str, db = Depends(get_db), current_user: dict
     project_models = list(db.models.find({"project_id": project_id}))
     for m in project_models:
         m["_id"] = str(m["_id"])
+        m["id"] = m["_id"]
     return project_models
 
 @app.get("/api/models")
@@ -239,6 +244,7 @@ def get_all_models(db = Depends(get_db), current_user: dict = Depends(get_curren
     all_models = list(db.models.find({"project_id": {"$in": project_ids}}).sort("accuracy", -1))
     for m in all_models:
         m["_id"] = str(m["_id"])
+        m["id"] = m["_id"]
     return all_models
 
 @app.get("/api/projects/{project_id}/shap")

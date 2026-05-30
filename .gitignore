@@ -15,3 +15,5 @@ frontend/.env.local
 .DS_Store
 backend/saved_models/
 backend/catboost_info/
+backend/uploads/
+backend/*.log

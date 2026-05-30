@@ -26,7 +26,7 @@ export default function Leaderboard() {
         
         // Fetch Projects to get target_column
         const projRes = await axios.get('http://localhost:8000/api/projects', { headers });
-        const project = projRes.data.find((p: any) => p.id === Number(id));
+        const project = projRes.data.find((p: any) => String(p.id) === String(id));
         if (project && project.target_column) {
           setTargetColumn(project.target_column);
         }
@@ -284,7 +284,7 @@ export default function Leaderboard() {
                     contentStyle={{ backgroundColor: '#050505', borderColor: '#ffffff20', borderRadius: '12px' }}
                     itemStyle={{ color: '#00F5A0', fontWeight: 'bold' }}
                     labelStyle={{ color: '#ffffff80', marginBottom: '4px' }}
-                    formatter={(value: number) => [value.toFixed(4), 'Mean Absolute SHAP']}
+                    formatter={(value: any) => [Number(value).toFixed(4), 'Mean Absolute SHAP']}
                   />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
                     {shapData.map((entry, index) => (

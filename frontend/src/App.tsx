@@ -108,7 +108,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: React.ReactElement }) {
   const { user, loading } = useAuth();
   
   if (loading) {
