@@ -243,7 +243,9 @@ export default function UploadData() {
           </div>
         </div>
         ) : uploadMethod === 'link' ? (
-          <form onSubmit={onLinkSubmit} className="relative glass-card border border-white/10 rounded-3xl p-10 py-16 flex flex-col items-center justify-center bg-black/40">
+          <div className="relative group">
+            <div className="absolute -inset-1 rounded-3xl blur-xl transition duration-1000 bg-[var(--color-brand-green)] opacity-0 group-hover:opacity-20"></div>
+            <form onSubmit={onLinkSubmit} className="relative glass-card border border-white/10 rounded-3xl p-10 py-16 flex flex-col items-center justify-center bg-black/40">
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 border border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10 shadow-[0_0_20px_rgba(0,255,163,0.2)]">
               <LinkIcon size={32} className="text-[var(--color-brand-green)]" />
             </div>
@@ -272,9 +274,12 @@ export default function UploadData() {
                 </div>
               </>
             )}
-          </form>
+            </form>
+          </div>
         ) : (
-          <form onSubmit={onKaggleSubmit} className="relative glass-card border border-white/10 rounded-3xl p-10 py-16 flex flex-col items-center justify-center bg-black/40">
+          <div className="relative group">
+            <div className="absolute -inset-1 rounded-3xl blur-xl transition duration-1000 bg-[var(--color-brand-green)] opacity-0 group-hover:opacity-20"></div>
+            <form onSubmit={onKaggleSubmit} className="relative glass-card border border-white/10 rounded-3xl p-10 py-16 flex flex-col items-center justify-center bg-black/40">
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 border border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10 shadow-[0_0_20px_rgba(0,255,163,0.2)]">
               <Database size={32} className="text-[var(--color-brand-green)]" />
             </div>
@@ -304,7 +309,8 @@ export default function UploadData() {
                 </div>
               </>
             )}
-          </form>
+            </form>
+          </div>
         )}
       </motion.div>
     </div>
