@@ -3,6 +3,7 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import UploadData from "./pages/UploadData";
+import DataAnalysis from "./pages/DataAnalysis";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/register" element={<AuthPage isLogin={false} />} />
         <Route path="/dashboard" element={<ProjectDashboard />} />
         <Route path="/project/:id/upload" element={<UploadData />} />
+        <Route path="/project/:id/dashboard" element={<DataAnalysis />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
