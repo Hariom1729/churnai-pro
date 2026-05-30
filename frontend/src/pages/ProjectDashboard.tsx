@@ -282,7 +282,7 @@ export default function ProjectDashboard() {
                     {deleteConfirmId === project.id && (
                       <div 
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-10 right-0 z-50 bg-slate-900 border border-red-500/30 p-4 rounded-xl w-64 shadow-[0_10px_40px_-10px_rgba(239,68,68,0.3)] backdrop-blur-xl"
+                        className="absolute top-10 right-0 z-50 bg-black/90 border border-[var(--color-brand-green)]/30 p-4 rounded-xl w-64 shadow-[0_10px_40px_-10px_rgba(0,255,163,0.3)] backdrop-blur-xl"
                       >
                         <p className="text-sm text-white mb-4 leading-relaxed font-medium">
                           Permanently delete this workspace? All data and models will be lost.
@@ -290,13 +290,13 @@ export default function ProjectDashboard() {
                         <div className="flex gap-2">
                           <button 
                             onClick={(e) => executeDeleteProject(e, project.id)} 
-                            className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors text-xs font-bold tracking-wide"
+                            className="flex-1 bg-[var(--color-brand-green)]/20 border border-[var(--color-brand-green)]/50 text-[var(--color-brand-green)] py-2 rounded-lg hover:bg-[var(--color-brand-green)]/30 hover:shadow-[0_0_15px_rgba(0,255,163,0.4)] transition-all text-xs font-bold tracking-wide"
                           >
                             Yes, Delete
                           </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} 
-                            className="flex-1 bg-white/10 text-white py-2 rounded-lg hover:bg-white/20 transition-colors text-xs font-bold tracking-wide"
+                            className="flex-1 bg-white/5 border border-white/10 text-white py-2 rounded-lg hover:bg-white/10 transition-colors text-xs font-bold tracking-wide"
                           >
                             Cancel
                           </button>
