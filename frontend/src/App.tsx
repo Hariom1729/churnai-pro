@@ -29,7 +29,7 @@ function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   // Don't show navbar on auth pages or landing page
-  if (['/', '/login', '/register'].includes(location.pathname)) return null;
+  if (['/', '/login', '/register', '/docs'].includes(location.pathname)) return null;
 
   const handleLogout = () => {
     localStorage.removeItem("token");
