@@ -1,6 +1,16 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional, List
+
+# Helper to map MongoDB _id to id
+class MongoBaseModel(BaseModel):
+    id: str = Field(alias="_id")
+    
+    class Config:
+        populate_by_name = True
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat()
+        }
 
 # User Schemas
 class UserBase(BaseModel):
@@ -10,17 +20,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     firebase_uid: str
 
-class UserResponse(UserBase):
-    id: int
+class UserResponse(MongoBaseModel, UserBase):
     gemini_api_key: Optional[str] = None
-    created_at: datetime
     
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     gemini_api_key: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
 
 # Project Schemas
 class ProjectBase(BaseModel):
@@ -29,20 +34,15 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     pass
 
-class ProjectResponse(ProjectBase):
-    id: int
-    user_id: int
+class ProjectResponse(MongoBaseModel, ProjectBase):
+    user_id: str
     dataset_name: Optional[str] = None
     target_column: Optional[str] = None
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 # Model Schemas
-class ModelResponse(BaseModel):
-    id: int
-    project_id: int
+class ModelResponse(MongoBaseModel):
+    project_id: str
     model_name: str
     accuracy: Optional[float] = None
     precision: Optional[float] = None
@@ -50,16 +50,9 @@ class ModelResponse(BaseModel):
     f1_score: Optional[float] = None
     auc_score: Optional[float] = None
     is_active: bool
-    
-    class Config:
-        from_attributes = True
 
 # Prediction Schemas
-class PredictionResponse(BaseModel):
-    id: int
-    project_id: int
+class PredictionResponse(MongoBaseModel):
+    project_id: str
     prediction_file: str
     created_at: datetime
-    
-    class Config:
-        from_attributes = True

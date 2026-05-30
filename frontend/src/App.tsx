@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect, useState, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from "react-router-dom";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "./firebase";
 import { AnimatePresence, motion } from "framer-motion";
 import { BrainCircuit, LayoutDashboard, Database, Activity, BarChart3, Settings as SettingsIcon, Bot, LogOut } from "lucide-react";
 
@@ -31,7 +33,8 @@ function Navbar() {
   // Don't show navbar on auth pages or landing page
   if (['/', '/login', '/register', '/docs'].includes(location.pathname)) return null;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await auth.signOut();
     localStorage.removeItem("token");
     navigate("/");
   };
@@ -94,9 +97,25 @@ function Navbar() {
   );
 }
 
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const token = localStorage.getItem("token");
-  if (!token) {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-white">Loading system...</div>;
+  }
+  
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
   return children;
@@ -199,12 +218,32 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Automatically refresh token in localStorage so API calls work
+        const token = await currentUser.getIdToken();
+        localStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
-    <BrowserRouter>
-      <div className="min-h-screen relative">
-        <Navbar />
-        <AnimatedRoutes />
-      </div>
-    </BrowserRouter>
+    <AuthContext.Provider value={{ user, loading }}>
+      <BrowserRouter>
+        <div className="min-h-screen relative">
+          <Navbar />
+          <AnimatedRoutes />
+        </div>
+      </BrowserRouter>
+    </AuthContext.Provider>
   );
 }

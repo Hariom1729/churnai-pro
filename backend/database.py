@@ -1,21 +1,15 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from pymongo import MongoClient
+import certifi
 
-# Default to SQLite if no PostgreSQL URL is provided
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./churnai.db")
+MONGO_URI = os.environ.get(
+    "MONGO_URI", 
+    "mongodb+srv://onlywebsite2592_db_user:Ai6YKCsDs5zFp7gh@cluster0.0qvgtkh.mongodb.net/?appName=Cluster0"
+)
 
-# For SQLite, we need check_same_thread=False
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+# Use certifi for TLS verification to avoid SSL errors with MongoDB Atlas
+client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+db = client.churnai_db
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    return db

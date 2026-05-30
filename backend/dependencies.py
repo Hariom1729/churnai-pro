@@ -1,26 +1,25 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import firebase_admin
-from firebase_admin import auth, credentials
-from sqlalchemy.orm import Session
+from firebase_admin import auth
+
+# Initialize Firebase Admin without credentials (only works for token verification with project ID)
+try:
+    firebase_admin.get_app()
+except ValueError:
+    firebase_admin.initialize_app(options={'projectId': 'chrunai-prediction'})
+
 from database import get_db
-from models import User
 import os
 
 security = HTTPBearer()
 
-FIREBASE_ENABLED = False
-print("Using Mock Auth (Firebase disabled).")
+FIREBASE_ENABLED = True
+print("Using Firebase Auth for Authentication.")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     
-    if not FIREBASE_ENABLED:
-        # Mock Auth for local development without Firebase keys
-        if token == "mock-jwt-token":
-            return {"uid": "mock-uid-123", "email": "test@example.com"}
-        raise HTTPException(status_code=401, detail="Invalid mock token")
-        
     try:
         decoded_token = auth.verify_id_token(token)
         return decoded_token
@@ -31,15 +30,23 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-def get_current_user(decoded_token: dict = Depends(verify_token), db: Session = Depends(get_db)):
+def get_current_user(decoded_token: dict = Depends(verify_token), db = Depends(get_db)):
     firebase_uid = decoded_token.get("uid")
     email = decoded_token.get("email")
+    name = decoded_token.get("name", "New User")
     
-    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
+    # Query MongoDB
+    user = db.users.find_one({"firebase_uid": firebase_uid})
+    
     if not user:
         # Auto-create user on first login
-        user = User(firebase_uid=firebase_uid, email=email, name=decoded_token.get("name", "New User"))
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        new_user = {
+            "firebase_uid": firebase_uid,
+            "email": email,
+            "name": name,
+            "gemini_api_key": None
+        }
+        result = db.users.insert_one(new_user)
+        user = db.users.find_one({"_id": result.inserted_id})
+        
     return user
