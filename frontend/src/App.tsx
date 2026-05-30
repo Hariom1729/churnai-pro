@@ -1,7 +1,7 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrainCircuit, LayoutDashboard, Database, Activity, BarChart3, Settings as SettingsIcon, Bot } from "lucide-react";
+import { BrainCircuit, LayoutDashboard, Database, Activity, BarChart3, Settings as SettingsIcon, Bot, LogOut } from "lucide-react";
 
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
@@ -26,8 +26,14 @@ const navItems = [
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   // Don't show navbar on auth pages or landing page
   if (['/', '/login', '/register'].includes(location.pathname)) return null;
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
@@ -70,7 +76,14 @@ function Navbar() {
           })}
         </div>
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 hover:bg-white/5 hover:text-[var(--color-brand-green)] transition-all text-sm font-medium text-slate-300"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
           <div className="w-10 h-10 rounded-full border border-white/20 bg-white/5 flex items-center justify-center overflow-hidden cursor-pointer hover:border-[var(--color-brand-green)] transition-colors">
             <img src="https://ui-avatars.com/api/?name=User&background=00F5A0&color=000" alt="Avatar" className="w-full h-full object-cover" />
           </div>
@@ -78,6 +91,14 @@ function Navbar() {
       </div>
     </nav>
   );
+}
+
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
 function AnimatedRoutes() {
@@ -102,49 +123,67 @@ function AnimatedRoutes() {
           </motion.div>
         } />
         <Route path="/dashboard" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <ProjectDashboard />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <ProjectDashboard />
+            </motion.div>
+          </ProtectedRoute>
+        } />
+        <Route path="/project/:id" element={
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <DataAnalysis />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/project/:id/upload" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <UploadData />
-          </motion.div>
-        } />
-        <Route path="/project/:id/dashboard" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <DataAnalysis />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <UploadData />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/project/:id/leaderboard" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <Leaderboard />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <Leaderboard />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/assistant" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <Assistant />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <Assistant />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/datasets" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <Datasets />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <Datasets />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/models" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <Models />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <Models />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/predictions" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <Predictions />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <Predictions />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/settings" element={
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
-            <Settings />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pt-28 pb-12 px-6 max-w-7xl mx-auto">
+              <Settings />
+            </motion.div>
+          </ProtectedRoute>
         } />
         
         <Route path="*" element={<Navigate to="/" />} />
