@@ -1,5 +1,10 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect, BackgroundTasks, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict
+import json
+import asyncio
+from pydantic import BaseModel
+from automl import run_automl_pipeline
 from database import engine, Base
 from sqlalchemy.orm import Session
 from database import get_db
@@ -70,3 +75,67 @@ def upload_dataset(project_id: int, file: UploadFile = File(...), db: Session = 
     db.commit()
     
     return {"info": f"file '{file.filename}' saved at '{file_location}'"}
+
+# --- WebSockets for Training Progress ---
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[int, list[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, project_id: int):
+        await websocket.accept()
+        if project_id not in self.active_connections:
+            self.active_connections[project_id] = []
+        self.active_connections[project_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, project_id: int):
+        if project_id in self.active_connections:
+            self.active_connections[project_id].remove(websocket)
+
+    async def send_progress(self, project_id: int, message: dict):
+        if project_id in self.active_connections:
+            for connection in self.active_connections[project_id]:
+                await connection.send_text(json.dumps(message))
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/train-progress/{project_id}")
+async def websocket_endpoint(websocket: WebSocket, project_id: int):
+    await manager.connect(websocket, project_id)
+    try:
+        while True:
+            await websocket.receive_text() # Just keep connection open
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, project_id)
+
+class TrainRequest(BaseModel):
+    target_column: str
+
+@app.post("/api/projects/{project_id}/train")
+async def start_training(project_id: int, request: TrainRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if not project.dataset_name:
+        raise HTTPException(status_code=400, detail="No dataset uploaded for this project")
+
+    # Start AutoML pipeline in background
+    background_tasks.add_task(
+        run_automl_pipeline,
+        project_id,
+        project.dataset_name,
+        request.target_column,
+        manager.send_progress
+    )
+
+    return {"message": "Training started"}
+
+@app.get("/api/projects/{project_id}/models", response_model=list[schemas.ModelResponse])
+def get_project_models(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Verify ownership
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    models = db.query(models.Model).filter(models.Model.project_id == project_id).all()
+    return models

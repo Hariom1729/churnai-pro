@@ -10,20 +10,73 @@ export default function DataAnalysis() {
   const [columns, setColumns] = useState<string[]>([]);
   const [targetColumn, setTargetColumn] = useState<string>('');
   
-  // In a real app we'd fetch actual CSV columns from the backend.
-  // We'll mock this for now until we build the Pandas logic on the backend.
+  const [progress, setProgress] = useState<{status: string, progress: number, error?: boolean, done?: boolean} | null>(null);
+
   useEffect(() => {
+    // Initial mock column loading
     setTimeout(() => {
       setColumns(['CustomerID', 'Age', 'TenureMonths', 'MonthlyCharge', 'TotalCharge', 'SupportTickets', 'Churn']);
-      setTargetColumn('Churn'); // auto-select 'Churn' if found
+      setTargetColumn('Churn');
       setLoading(false);
     }, 1500);
   }, [id]);
 
-  const handleStartTraining = () => {
-    alert(`Starting AutoML pipeline to predict: ${targetColumn}!`);
-    // Navigate to training progress page or dashboard (Phase 3)
+  const handleStartTraining = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Setup WebSocket
+      const ws = new WebSocket(`ws://localhost:8000/ws/train-progress/${id}`);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setProgress(data);
+        if (data.done) {
+          setTimeout(() => {
+            navigate(`/project/${id}/leaderboard`);
+          }, 1500);
+        }
+      };
+
+      // Trigger Training
+      await axios.post(`http://localhost:8000/api/projects/${id}/train`, 
+        { target_column: targetColumn },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setProgress({ status: 'Initializing pipeline...', progress: 0 });
+    } catch (err) {
+      console.error('Failed to start training:', err);
+      alert('Failed to start training. See console.');
+    }
   };
+
+  if (progress) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white p-8 flex flex-col items-center justify-center">
+        <div className="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl">
+          <h2 className="text-2xl font-bold mb-6 text-center">Training AutoML Models...</h2>
+          
+          <div className="mb-4 flex justify-between text-sm">
+            <span className={progress.error ? "text-red-400" : "text-blue-400"}>{progress.status}</span>
+            <span className="text-slate-400">{progress.progress}%</span>
+          </div>
+          
+          <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+            <div 
+              className={`h-3 rounded-full transition-all duration-500 ${progress.error ? 'bg-red-500' : 'bg-blue-500'}`}
+              style={{ width: `${progress.progress}%` }}
+            ></div>
+          </div>
+          
+          {progress.done && (
+            <div className="mt-8 text-center text-green-400 animate-pulse">
+              Training complete! Redirecting to Leaderboard...
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">

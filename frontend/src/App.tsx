@@ -4,6 +4,7 @@ import AuthPage from "./pages/AuthPage";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import UploadData from "./pages/UploadData";
 import DataAnalysis from "./pages/DataAnalysis";
+import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/dashboard" element={<ProjectDashboard />} />
         <Route path="/project/:id/upload" element={<UploadData />} />
         <Route path="/project/:id/dashboard" element={<DataAnalysis />} />
+        <Route path="/project/:id/leaderboard" element={<Leaderboard />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
