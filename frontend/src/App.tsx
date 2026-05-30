@@ -223,14 +223,14 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       if (currentUser) {
-        // Automatically refresh token in localStorage so API calls work
+        // Automatically refresh token in localStorage BEFORE mounting protected routes
         const token = await currentUser.getIdToken();
         localStorage.setItem("token", token);
       } else {
         localStorage.removeItem("token");
       }
+      setUser(currentUser);
       setLoading(false);
     });
     return () => unsubscribe();
