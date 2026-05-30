@@ -60,7 +60,7 @@ def assistant_chat(req: ChatRequest, db: Session = Depends(get_db), current_user
     for p in projects:
         context += f"\n- Dataset '{p.dataset_name}': predicting '{p.target_column}'."
         
-    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=context)
+    model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=context)
         
     messages = []
     for msg in req.history:
@@ -306,7 +306,7 @@ def get_project_recommendations(project_id: int, db: Session = Depends(get_db), 
             raise Exception("GEMINI_API_KEY environment variable not set")
             
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         shap_data = json.loads(project.shap_values)
         top_features = list(shap_data.keys())[:3]
