@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, BarChart2, ShieldCheck, Zap, BrainCircuit } from "lucide-react";
 
 export default function LandingPage() {
+  const isLoggedIn = !!localStorage.getItem("token");
+
   return (
     <div className="w-full relative overflow-hidden">
       {/* Navbar */}
@@ -17,12 +19,20 @@ export default function LandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/login" className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-[var(--color-brand-green)] transition-colors">
-            System Login
-          </Link>
-          <Link to="/register" className="btn-primary py-2 px-5 text-sm">
-            Initialize Access
-          </Link>
+          {isLoggedIn ? (
+            <Link to="/dashboard" className="btn-primary py-2 px-5 text-sm">
+              Enter Hub
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-[var(--color-brand-green)] transition-colors">
+                System Login
+              </Link>
+              <Link to="/register" className="btn-primary py-2 px-5 text-sm">
+                Initialize Access
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -49,12 +59,20 @@ export default function LandingPage() {
             Ingest raw customer data, orchestrate advanced machine learning pipelines autonomously, and extract actionable intelligence to retain your highest-value users.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Link to="/register" className="btn-primary text-lg px-10 py-4 w-full sm:w-auto justify-center">
-              Deploy Workspace <ArrowRight size={20} className="ml-2" />
-            </Link>
-            <Link to="/login" className="btn-secondary text-lg px-10 py-4 w-full sm:w-auto justify-center">
-              View Documentation
-            </Link>
+            {isLoggedIn ? (
+              <Link to="/dashboard" className="btn-primary text-lg px-10 py-4 w-full sm:w-auto justify-center">
+                Access Dashboard <ArrowRight size={20} className="ml-2" />
+              </Link>
+            ) : (
+              <>
+                <Link to="/register" className="btn-primary text-lg px-10 py-4 w-full sm:w-auto justify-center">
+                  Deploy Workspace <ArrowRight size={20} className="ml-2" />
+                </Link>
+                <Link to="/login" className="btn-secondary text-lg px-10 py-4 w-full sm:w-auto justify-center">
+                  View Documentation
+                </Link>
+              </>
+            )}
           </div>
         </motion.div>
 
