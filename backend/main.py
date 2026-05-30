@@ -119,6 +119,28 @@ def create_project(project: schemas.ProjectCreate, db = Depends(get_db), current
     created_project["id"] = created_project["_id"]
     return created_project
 
+@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: str, db = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    # Delete dataset file from GridFS
+    if project.get("dataset_file_id"):
+        try:
+            fs = get_fs()
+            fs.delete(ObjectId(project["dataset_file_id"]))
+        except Exception as e:
+            print(f"Error deleting gridfs file: {e}")
+            
+    # Delete associated models
+    db.models.delete_many({"project_id": project_id})
+    
+    # Delete project
+    db.projects.delete_one({"_id": ObjectId(project_id)})
+    
+    return {"status": "success", "message": "Project deleted"}
+
 @app.post("/api/projects/{project_id}/upload")
 def upload_dataset(project_id: str, file: UploadFile = File(...), db = Depends(get_db), current_user: dict = Depends(get_current_user)):
     project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})

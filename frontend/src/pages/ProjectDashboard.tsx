@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Database, FileDown, ArrowRight, Activity, Users, Target, ShieldCheck } from 'lucide-react';
+import { Plus, Database, FileDown, ArrowRight, Activity, Users, Target, ShieldCheck, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -45,6 +45,22 @@ export default function ProjectDashboard() {
       fetchProjects();
     } catch (err) {
       console.error('Error creating project:', err);
+    }
+  };
+
+  const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this workspace? This action cannot be undone.')) return;
+    
+    try {
+      const currentToken = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/api/projects/${projectId}`, {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+      fetchProjects();
+    } catch (err) {
+      console.error('Error deleting project:', err);
+      alert('Failed to delete workspace.');
     }
   };
 
@@ -248,8 +264,17 @@ export default function ProjectDashboard() {
                 <div className="p-3 bg-white/5 rounded-xl border border-white/10 group-hover:border-[var(--color-brand-green)]/50 group-hover:bg-[var(--color-brand-green)]/10 transition-colors">
                   <Database className="text-slate-400 group-hover:text-[var(--color-brand-green)] transition-colors" size={24} />
                 </div>
-                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs text-slate-400">
-                  ID: #{project.id.toString().padStart(4, '0')}
+                <div className="flex items-center gap-3">
+                  <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs text-slate-400">
+                    ID: #{project.id.toString().padStart(4, '0')}
+                  </div>
+                  <button 
+                    onClick={(e) => handleDeleteProject(e, project.id)}
+                    className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-lg border border-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Delete Workspace"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
               
