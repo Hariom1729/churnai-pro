@@ -89,11 +89,19 @@ The system utilizes PostgreSQL with the following core relational models:
 
 ---
 
-## 🔮 Roadmap (Upcoming Phases)
-- **Phase 2:** Drag-and-drop CSV uploads with automated dataset analysis.
-- **Phase 3:** Celery integration for asynchronous model training with WebSocket live progress tracking.
-- **Phase 4:** KMeans Customer Segmentation clustering.
-- **Phase 5:** Integration of a Large Language Model (LLM) chatbot to answer business questions directly from dataset statistics.
+## 🔮 Implementation Status & Roadmap
+
+- ✅ **Phase 1:** Project Setup & Auth (FastAPI, React, SQLite, Mock Auth).
+- ✅ **Phase 2:** Core UX & Project Management (Workspaces, Data Upload).
+- ✅ **Phase 3:** AutoML Engine (Automated Scikit-Learn pipeline training).
+- ✅ **Phase 4:** Explainability & Dashboards (Global SHAP, Feature Importance).
+- ✅ **Phase 5:** Advanced Intelligence Suite (What-If Simulator, Local SHAP, K-Means Customer Personas, API Predictions Export, and fully dynamic Gemini AI Recommendations).
+
+## 🔑 Environment Variables
+To use the dynamic AI Recommendations feature in Phase 5, create a `.env` file in the `backend/` directory:
+```
+GEMINI_API_KEY=your_gemini_api_key_here
+```
 
 ## License
 MIT License

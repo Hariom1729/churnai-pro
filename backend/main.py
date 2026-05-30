@@ -247,6 +247,9 @@ def get_project_recommendations(project_id: int, db: Session = Depends(get_db), 
         import google.generativeai as genai
         import json
         import os
+        from dotenv import load_dotenv
+        
+        load_dotenv()
         
         # Configure Gemini with the user-provided API key from environment
         api_key = os.environ.get("GEMINI_API_KEY")
