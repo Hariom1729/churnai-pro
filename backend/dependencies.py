@@ -17,7 +17,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         decoded_token = id_token.verify_firebase_token(
             token,
             google_requests.Request(),
-            audience="chrunai-prediction"
+            audience=os.environ.get("FIREBASE_PROJECT_ID", "chrunai-prediction")
         )
         return decoded_token
     except Exception as e:
