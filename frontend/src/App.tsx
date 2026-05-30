@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrainCircuit, LayoutDashboard, Database, Activity, BarChart3, Settings, Bot } from "lucide-react";
+import { BrainCircuit, LayoutDashboard, Database, Activity, BarChart3, Settings as SettingsIcon, Bot } from "lucide-react";
 
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
@@ -21,7 +21,7 @@ const navItems = [
   { name: 'Models', path: '/models', icon: Activity },
   { name: 'Predictions', path: '/predictions', icon: BarChart3 },
   { name: 'Assistant', path: '/assistant', icon: Bot },
-  { name: 'Settings', path: '/settings', icon: Settings },
+  { name: 'Settings', path: '/settings', icon: SettingsIcon },
 ];
 
 function Navbar() {
