@@ -28,6 +28,7 @@ class ProjectResponse(ProjectBase):
     id: int
     user_id: int
     dataset_name: Optional[str] = None
+    target_column: Optional[str] = None
     created_at: datetime
     
     class Config:

@@ -185,6 +185,41 @@ async def run_automl_pipeline(project_id: int, dataset_name: str, target_column:
             # Don't fail the whole pipeline if SHAP fails
             pass
             
+        # 6. Customer Persona Clustering (K-Means)
+        await send_progress_update(project_id, {"status": "Generating Persona Clusters...", "progress": 98})
+        from sklearn.cluster import KMeans
+        try:
+            # Cluster the test set
+            kmeans = KMeans(n_clusters=4, random_state=42)
+            clusters = kmeans.fit_predict(X_test)
+            
+            # Save the cluster centers and their feature importances for front-end rendering
+            centers = kmeans.cluster_centers_
+            # Convert scaled centers back or just store them to show relative high/low
+            cluster_profiles = []
+            for i in range(4):
+                # find top 3 features defining this cluster (highest absolute center values)
+                center_vals = centers[i]
+                top_idx = np.argsort(np.abs(center_vals))[-3:]
+                top_features = {X_test.columns[idx]: float(center_vals[idx]) for idx in top_idx}
+                cluster_profiles.append({
+                    "cluster_id": i,
+                    "size": int(np.sum(clusters == i)),
+                    "top_features": top_features
+                })
+                
+            project = db.query(db_models.Project).filter(db_models.Project.id == project_id).first()
+            if project:
+                project.dataset_name = project.dataset_name # touch
+                # Note: we need a place to store cluster_profiles. 
+                # We can store it in a new column or append it somewhere.
+                # Actually, let's create a new file for cluster profiles
+                with open(f"saved_models/project_{project_id}_clusters.json", "w") as f:
+                    json.dump(cluster_profiles, f)
+        except Exception as cluster_e:
+            print(f"Clustering failed: {cluster_e}")
+            pass
+            
         db.commit()
 
         # Save the preprocessor metadata/scaler (simplified for this scope, just saving X columns to use later)
@@ -201,5 +236,104 @@ async def run_automl_pipeline(project_id: int, dataset_name: str, target_column:
         import traceback
         traceback.print_exc()
         await send_progress_update(project_id, {"status": f"Error: {str(e)}", "progress": 0, "error": True})
+    finally:
+        db.close()
+
+async def predict_single_row(project_id: int, dataset_name: str, target_column: str, row_data: dict):
+    """
+    Simulates inference by loading the full dataset, appending the altered row, 
+    running the exact same preprocessing steps, and then extracting the row for prediction.
+    This ensures all categorical encoding and scaling perfectly matches training.
+    """
+    db = SessionLocal()
+    import models as db_models
+    import shap
+    
+    try:
+        file_path = f"uploads/project_{project_id}_{dataset_name}"
+        if not os.path.exists(file_path):
+            raise Exception("Dataset not found")
+
+        df = await asyncio.to_thread(pd.read_csv, file_path)
+        
+        # Ensure target column exists
+        if target_column not in df.columns:
+            raise Exception(f"Target column '{target_column}' not found")
+            
+        # Drop ID-like columns
+        for col in df.columns:
+            if df[col].dtype == 'object' and df[col].nunique() > len(df) * 0.5:
+                df = df.drop(col, axis=1)
+                
+        # Separate original features and target
+        X = df.drop(target_column, axis=1)
+        
+        # Create a new DataFrame with just the altered row
+        new_row_df = pd.DataFrame([row_data])
+        
+        # Ensure it has exactly the same columns as X (ignoring any extra/missing)
+        for col in X.columns:
+            if col not in new_row_df.columns:
+                new_row_df[col] = np.nan
+        new_row_df = new_row_df[X.columns]
+        
+        # Append to the end of X
+        X = pd.concat([X, new_row_df], ignore_index=True)
+        
+        # Preprocessing (Identical to training)
+        numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns
+        categorical_cols = X.select_dtypes(include=['object', 'category', 'bool']).columns
+
+        if len(numeric_cols) > 0:
+            num_imputer = SimpleImputer(strategy='median')
+            X[numeric_cols] = num_imputer.fit_transform(X[numeric_cols])
+            scaler = StandardScaler()
+            X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
+
+        if len(categorical_cols) > 0:
+            cat_imputer = SimpleImputer(strategy='most_frequent')
+            X[categorical_cols] = cat_imputer.fit_transform(X[categorical_cols])
+            X = pd.get_dummies(X, columns=categorical_cols, drop_first=True)
+            
+        # The row we want to predict is the very last one
+        X_target = X.iloc[[-1]]
+        
+        # Ensure columns match what the model expects
+        expected_columns = joblib.load(f"saved_models/project_{project_id}_columns.joblib")
+        for col in expected_columns:
+            if col not in X_target.columns:
+                X_target[col] = 0
+        X_target = X_target[expected_columns]
+        
+        # Load best model
+        best_model_record = db.query(db_models.Model).filter(db_models.Model.project_id == project_id, db_models.Model.is_active == True).first()
+        if not best_model_record:
+            raise Exception("No active model found")
+            
+        clf = joblib.load(best_model_record.model_path)
+        
+        # Predict probability
+        proba = float(clf.predict_proba(X_target)[0, 1]) if hasattr(clf, "predict_proba") else float(clf.predict(X_target)[0])
+        
+        # Calculate Local SHAP
+        explainer = shap.TreeExplainer(clf)
+        shap_values = explainer.shap_values(X_target)
+        
+        if isinstance(shap_values, list):
+            shap_values = shap_values[1] if len(shap_values) > 1 else shap_values[0]
+        elif len(shap_values.shape) == 3:
+            shap_values = shap_values[:, :, 1]
+            
+        local_shap = shap_values[0]
+        feature_importance = {col: float(val) for col, val in zip(X_target.columns, local_shap)}
+        
+        # Sort by absolute impact
+        sorted_importance = dict(sorted(feature_importance.items(), key=lambda item: abs(item[1]), reverse=True))
+        
+        return {
+            "churn_probability": proba,
+            "local_shap_values": sorted_importance
+        }
+        
     finally:
         db.close()

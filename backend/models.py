@@ -22,6 +22,7 @@ class Project(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     project_name = Column(String, index=True, nullable=False)
     dataset_name = Column(String, nullable=True)
+    target_column = Column(String, nullable=True)
     shap_values = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

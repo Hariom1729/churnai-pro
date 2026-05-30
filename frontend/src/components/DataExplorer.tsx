@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Search, Filter, Database, FileSpreadsheet, Sparkles, ChevronRight } from 'lucide-react';
+import { Search, Filter, Database, FileSpreadsheet, Sparkles, ChevronRight, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
+import WhatIfSimulator from './WhatIfSimulator';
 
 interface DataExplorerProps {
   projectId: string;
   columns: string[];
+  targetColumn?: string;
 }
 
-export default function DataExplorer({ projectId, columns }: DataExplorerProps) {
+export default function DataExplorer({ projectId, columns, targetColumn }: DataExplorerProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [globalFilter, setGlobalFilter] = useState('');
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  
+  const [selectedRowData, setSelectedRowData] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,6 +124,7 @@ export default function DataExplorer({ projectId, columns }: DataExplorerProps) 
           <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
             <thead className="bg-black/80 backdrop-blur-xl sticky top-0 z-30 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]">
               <tr>
+                {targetColumn && <th className="px-6 py-4 border-b border-white/10 w-24">Action</th>}
                 <th className="px-6 py-4 border-b border-white/10 w-10"></th>
                 {columns.map(col => (
                   <th key={col} className="px-6 py-4 font-bold text-slate-200 border-b border-white/10 tracking-wide">
@@ -152,6 +157,17 @@ export default function DataExplorer({ projectId, columns }: DataExplorerProps) 
                   onMouseEnter={() => setHoveredRow(idx)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
+                  {targetColumn && (
+                    <td className="px-6 py-4 text-center border-r border-white/5">
+                      <button 
+                        onClick={() => setSelectedRowData(row)}
+                        className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded text-[10px] font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-1 border border-indigo-500/30"
+                      >
+                        <Target size={12} />
+                        Simulate
+                      </button>
+                    </td>
+                  )}
                   <td className="px-6 py-4 text-slate-600 font-mono text-xs text-center border-r border-white/5">
                     {idx + 1}
                   </td>
@@ -203,6 +219,15 @@ export default function DataExplorer({ projectId, columns }: DataExplorerProps) 
           </div>
         </div>
       </div>
+
+      {selectedRowData && targetColumn && (
+        <WhatIfSimulator 
+          projectId={projectId}
+          targetColumn={targetColumn}
+          initialRowData={selectedRowData}
+          onClose={() => setSelectedRowData(null)}
+        />
+      )}
     </motion.div>
   );
 }

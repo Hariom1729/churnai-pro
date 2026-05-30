@@ -151,6 +151,9 @@ async def start_training(project_id: int, request: TrainRequest, background_task
         raise HTTPException(status_code=400, detail="No dataset uploaded for this project")
 
     # Start AutoML pipeline in background
+    project.target_column = request.target_column
+    db.commit()
+    
     background_tasks.add_task(
         run_automl_pipeline,
         project_id,
@@ -187,3 +190,164 @@ def get_project_shap_values(project_id: int, db: Session = Depends(get_db), curr
         return {"shap_values": shap_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to parse SHAP values")
+
+class PredictRowRequest(BaseModel):
+    row_data: dict
+    target_column: str
+
+@app.post("/api/projects/{project_id}/predict_row")
+async def api_predict_row(project_id: int, request: PredictRowRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project or not project.dataset_name:
+        raise HTTPException(status_code=404, detail="Project or dataset not found")
+        
+    from automl import predict_single_row
+    try:
+        result = await predict_single_row(
+            project_id=project_id, 
+            dataset_name=project.dataset_name, 
+            target_column=request.target_column,
+            row_data=request.row_data
+        )
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/projects/{project_id}/clusters")
+def get_project_clusters(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    cluster_file = f"saved_models/project_{project_id}_clusters.json"
+    import os
+    if not os.path.exists(cluster_file):
+        return {"clusters": []}
+        
+    import json
+    try:
+        with open(cluster_file, "r") as f:
+            clusters = json.load(f)
+        return {"clusters": clusters}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to load clusters")
+
+@app.get("/api/projects/{project_id}/recommendations")
+def get_project_recommendations(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if not project.shap_values:
+        return {"recommendations": []}
+        
+    try:
+        shap_data = json.loads(project.shap_values)
+        top_features = list(shap_data.keys())[:3]
+        
+        # Simple heuristic mappings for a generic business context
+        heuristics = {
+            "MonthlyCharges": "Consider introducing flexible pricing tiers or offering targeted discounts to high-risk customers sensitive to price.",
+            "TotalCharges": "High total charge sensitivity indicates loyalty decay. Implement a proactive retention program offering loyalty rewards.",
+            "tenure": "Early-stage drop-off detected. Enhance your onboarding process to ensure customers see value within the first 30 days.",
+            "Contract": "Month-to-month contracts are highly volatile. Incentivize annual plans with a discounted rate.",
+            "InternetService": "Customers are churning based on service type. Investigate fiber/DSL stability and offer free upgrades if necessary.",
+            "PaymentMethod": "Friction in payments detected. Encourage auto-pay setup with a one-time bill credit.",
+            "TechSupport": "Lack of support correlates with churn. Proactively reach out to users with poor engagement or offer premium support bundles."
+        }
+        
+        recs = []
+        for feat in top_features:
+            # Check if any known heuristic substring matches the feature name
+            matched = False
+            for key, rec_text in heuristics.items():
+                if key.lower() in feat.lower():
+                    recs.append({"feature": feat, "action": rec_text})
+                    matched = True
+                    break
+            
+            if not matched:
+                recs.append({
+                    "feature": feat, 
+                    "action": f"The feature '{feat}' is a primary driver of churn. We recommend auditing this segment closely to identify friction points."
+                })
+                
+        return {"recommendations": recs}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to generate recommendations")
+
+@app.get("/api/projects/{project_id}/export")
+def export_predictions(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    from fastapi.responses import FileResponse
+    import os
+    import pandas as pd
+    import joblib
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import StandardScaler
+    
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project or not project.dataset_name:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    best_model_record = db.query(models.Model).filter(models.Model.project_id == project_id, models.Model.is_active == True).first()
+    if not best_model_record:
+        raise HTTPException(status_code=404, detail="No active model found")
+        
+    export_path = f"uploads/project_{project_id}_predictions.csv"
+    
+    # If not already generated, generate it now
+    if not os.path.exists(export_path):
+        try:
+            file_path = f"uploads/project_{project_id}_{project.dataset_name}"
+            df = pd.read_csv(file_path)
+            
+            target_column = project.target_column
+            if target_column in df.columns:
+                X = df.drop(target_column, axis=1)
+            else:
+                X = df.copy()
+                
+            for col in X.columns:
+                if X[col].dtype == 'object' and X[col].nunique() > len(X) * 0.5:
+                    X = X.drop(col, axis=1)
+                    
+            numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns
+            categorical_cols = X.select_dtypes(include=['object', 'category', 'bool']).columns
+
+            if len(numeric_cols) > 0:
+                num_imputer = SimpleImputer(strategy='median')
+                X[numeric_cols] = num_imputer.fit_transform(X[numeric_cols])
+                scaler = StandardScaler()
+                X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
+
+            if len(categorical_cols) > 0:
+                cat_imputer = SimpleImputer(strategy='most_frequent')
+                X[categorical_cols] = cat_imputer.fit_transform(X[categorical_cols])
+                X = pd.get_dummies(X, columns=categorical_cols, drop_first=True)
+                
+            expected_columns = joblib.load(f"saved_models/project_{project_id}_columns.joblib")
+            for col in expected_columns:
+                if col not in X.columns:
+                    X[col] = 0
+            X = X[expected_columns]
+            
+            clf = joblib.load(best_model_record.model_path)
+            
+            if hasattr(clf, "predict_proba"):
+                probas = clf.predict_proba(X)[:, 1]
+                df['Churn_Risk_Probability'] = probas
+                df['Predicted_Churn'] = (probas > 0.5).astype(int)
+            else:
+                preds = clf.predict(X)
+                df['Predicted_Churn'] = preds
+                
+            df.to_csv(export_path, index=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
+            
+    return FileResponse(export_path, media_type="text/csv", filename=f"churn_predictions_workspace_{project_id}.csv")
