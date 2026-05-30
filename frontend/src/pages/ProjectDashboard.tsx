@@ -9,6 +9,7 @@ export default function ProjectDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
@@ -48,15 +49,15 @@ export default function ProjectDashboard() {
     }
   };
 
-  const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+  const executeDeleteProject = async (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this workspace? This action cannot be undone.')) return;
     
     try {
       const currentToken = localStorage.getItem('token');
       await axios.delete(`${API_BASE_URL}/api/projects/${projectId}`, {
         headers: { Authorization: `Bearer ${currentToken}` }
       });
+      setDeleteConfirmId(null);
       fetchProjects();
     } catch (err) {
       console.error('Error deleting project:', err);
@@ -268,13 +269,41 @@ export default function ProjectDashboard() {
                   <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs text-slate-400">
                     ID: #{project.id.toString().padStart(4, '0')}
                   </div>
-                  <button 
-                    onClick={(e) => handleDeleteProject(e, project.id)}
-                    className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-lg border border-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Delete Workspace"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(project.id); }}
+                      className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-lg border border-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Delete Workspace"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+
+                    {/* Custom Inline Confirmation Popover */}
+                    {deleteConfirmId === project.id && (
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute top-10 right-0 z-50 bg-slate-900 border border-red-500/30 p-4 rounded-xl w-64 shadow-[0_10px_40px_-10px_rgba(239,68,68,0.3)] backdrop-blur-xl"
+                      >
+                        <p className="text-sm text-white mb-4 leading-relaxed font-medium">
+                          Permanently delete this workspace? All data and models will be lost.
+                        </p>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={(e) => executeDeleteProject(e, project.id)} 
+                            className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors text-xs font-bold tracking-wide"
+                          >
+                            Yes, Delete
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} 
+                            className="flex-1 bg-white/10 text-white py-2 rounded-lg hover:bg-white/20 transition-colors text-xs font-bold tracking-wide"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
