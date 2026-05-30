@@ -33,6 +33,52 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to ChurnAI Pro API"}
 
+from typing import List
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[ChatMessage] = []
+
+@app.post("/api/assistant/chat")
+def assistant_chat(req: ChatRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    import google.generativeai as genai
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable not set")
+        
+    genai.configure(api_key=api_key)
+    projects = db.query(models.Project).filter(models.Project.owner_id == current_user.id).all()
+    context = f"You are ChurnAI, an expert data science assistant. The user has {len(projects)} datasets uploaded."
+    for p in projects:
+        context += f"\n- Dataset '{p.dataset_name}': predicting '{p.target_column}'."
+        
+    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=context)
+        
+    messages = []
+    for msg in req.history:
+        messages.append({
+            "role": "model" if msg.role == "assistant" else "user",
+            "parts": [msg.content]
+        })
+    messages.append({"role": "user", "parts": [req.message]})
+    
+    try:
+        response = model.generate_content(messages)
+        return {"response": response.text}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/users/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
