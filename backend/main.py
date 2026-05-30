@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, List
 import json
 import asyncio
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
+import requests
+import io
+import os
+import kagglehub
 from automl import run_automl_pipeline
 from database import get_db, get_fs
 import schemas
@@ -37,6 +41,12 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: List[ChatMessage] = []
+
+class LinkUpload(BaseModel):
+    url: str
+
+class KaggleUpload(BaseModel):
+    identifier: str
 
 @app.post("/api/assistant/chat")
 def assistant_chat(req: ChatRequest, db = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -140,6 +150,90 @@ def delete_project(project_id: str, db = Depends(get_db), current_user: dict = D
     db.projects.delete_one({"_id": ObjectId(project_id)})
     
     return {"status": "success", "message": "Project deleted"}
+
+@app.post("/api/projects/{project_id}/upload-link")
+def upload_dataset_link(project_id: str, payload: LinkUpload, db = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    try:
+        response = requests.get(payload.url, stream=True, timeout=10)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch dataset from link: {str(e)}")
+        
+    content_type = response.headers.get('Content-Type', '')
+    # Sometimes public CSVs are sent as plain text. Let's just download it and assume it's a CSV if it looks like one.
+    filename = payload.url.split("/")[-1].split("?")[0]
+    if not filename.endswith(".csv"):
+        filename = "downloaded_dataset.csv"
+
+    fs = get_fs()
+    # Delete old file if exists
+    if project.get("dataset_file_id"):
+        try:
+            fs.delete(ObjectId(project["dataset_file_id"]))
+        except:
+            pass
+
+    # Read content
+    content = response.content
+    file_id = fs.put(content, filename=filename, project_id=project_id)
+        
+    db.projects.update_one(
+        {"_id": ObjectId(project_id)},
+        {"$set": {"dataset_file_id": str(file_id), "dataset_name": filename}}
+    )
+    
+    return {"status": "success", "message": "Dataset fetched and uploaded successfully", "filename": filename}
+
+@app.post("/api/projects/{project_id}/upload-kaggle")
+def upload_dataset_kaggle(project_id: str, payload: KaggleUpload, db = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    project = db.projects.find_one({"_id": ObjectId(project_id), "user_id": str(current_user["_id"])})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    try:
+        path = kagglehub.dataset_download(payload.identifier)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch Kaggle dataset: {str(e)}")
+        
+    # Find the first CSV file in the downloaded path
+    csv_file_path = None
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(".csv"):
+                csv_file_path = os.path.join(root, file)
+                break
+        if csv_file_path:
+            break
+            
+    if not csv_file_path:
+        raise HTTPException(status_code=400, detail="No CSV file found in the Kaggle dataset.")
+
+    filename = os.path.basename(csv_file_path)
+
+    fs = get_fs()
+    # Delete old file if exists
+    if project.get("dataset_file_id"):
+        try:
+            fs.delete(ObjectId(project["dataset_file_id"]))
+        except:
+            pass
+
+    # Read content
+    with open(csv_file_path, 'rb') as f:
+        content = f.read()
+        
+    file_id = fs.put(content, filename=filename, project_id=project_id)
+        
+    db.projects.update_one(
+        {"_id": ObjectId(project_id)},
+        {"$set": {"dataset_file_id": str(file_id), "dataset_name": filename}}
+    )
+    
+    return {"status": "success", "message": "Kaggle dataset downloaded successfully", "filename": filename}
 
 @app.post("/api/projects/{project_id}/upload")
 def upload_dataset(project_id: str, file: UploadFile = File(...), db = Depends(get_db), current_user: dict = Depends(get_current_user)):

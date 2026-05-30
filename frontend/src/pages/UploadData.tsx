@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useParams, useNavigate } from 'react-router-dom';
-import { UploadCloud, CheckCircle, AlertCircle, ArrowLeft, Database, Sparkles } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, ArrowLeft, Database, Sparkles, Link as LinkIcon } from 'lucide-react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
@@ -13,6 +13,10 @@ export default function UploadData() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'link' | 'kaggle'>('file');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [kaggleId, setKaggleId] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -54,6 +58,56 @@ export default function UploadData() {
       setIsUploading(false);
     }
   }, [id, navigate, token]);
+
+  const onLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkUrl) return;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      await axios.post(`${API_BASE_URL}/api/projects/${id}/upload-link`, { url: linkUrl }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        navigate(`/project/${id}/dashboard`);
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Failed to fetch dataset from link.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onKaggleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kaggleId) return;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      await axios.post(`${API_BASE_URL}/api/projects/${id}/upload-kaggle`, { identifier: kaggleId }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        navigate(`/project/${id}/dashboard`);
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Failed to fetch Kaggle dataset.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
@@ -104,8 +158,30 @@ export default function UploadData() {
           </motion.div>
         )}
 
-        <div className="relative group">
-          {/* Animated glow border behind */}
+        <div className="flex gap-6 mb-8 border-b border-white/10 px-2">
+          <button 
+            onClick={() => setUploadMethod('file')} 
+            className={`pb-4 px-2 -mb-[1px] border-b-2 font-semibold transition-colors ${uploadMethod === 'file' ? 'border-[var(--color-brand-green)] text-[var(--color-brand-green)]' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            Local File Upload
+          </button>
+          <button 
+            onClick={() => setUploadMethod('link')} 
+            className={`pb-4 px-2 -mb-[1px] border-b-2 font-semibold transition-colors ${uploadMethod === 'link' ? 'border-[var(--color-brand-green)] text-[var(--color-brand-green)]' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            Fetch from URL Link
+          </button>
+          <button 
+            onClick={() => setUploadMethod('kaggle')} 
+            className={`pb-4 px-2 -mb-[1px] border-b-2 font-semibold transition-colors ${uploadMethod === 'kaggle' ? 'border-[var(--color-brand-green)] text-[var(--color-brand-green)]' : 'border-transparent text-slate-400 hover:text-slate-300'}`}
+          >
+            Kaggle Dataset
+          </button>
+        </div>
+
+        {uploadMethod === 'file' ? (
+          <div className="relative group">
+            {/* Animated glow border behind */}
           <div className={`absolute -inset-1 rounded-3xl blur-xl transition duration-1000 ${
             isDragActive ? 'bg-gradient-to-r from-[var(--color-brand-green)] to-[var(--color-brand-cyan)] opacity-70' 
             : 'bg-[var(--color-brand-green)] opacity-0 group-hover:opacity-20'
@@ -166,6 +242,70 @@ export default function UploadData() {
             )}
           </div>
         </div>
+        ) : uploadMethod === 'link' ? (
+          <form onSubmit={onLinkSubmit} className="relative glass-card border border-white/10 rounded-3xl p-10 py-16 flex flex-col items-center justify-center bg-black/40">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 border border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10 shadow-[0_0_20px_rgba(0,255,163,0.2)]">
+              <LinkIcon size={32} className="text-[var(--color-brand-green)]" />
+            </div>
+            
+            {isUploading ? (
+              <div className="w-full max-w-xs relative z-10 text-center">
+                <p className="text-xl font-bold mb-4 text-white animate-pulse">Fetching from URL...</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xl font-bold text-white mb-3">Paste public CSV URL</p>
+                <p className="text-slate-400 mb-8 text-center max-w-md">Provide a direct download link to a public CSV file (e.g. raw GitHub content, open S3 bucket).</p>
+                
+                <div className="w-full max-w-lg flex gap-3">
+                  <input 
+                    type="url" 
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://example.com/dataset.csv" 
+                    className="flex-1 bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white focus:border-[var(--color-brand-green)] focus:ring-1 focus:ring-[var(--color-brand-green)] focus:outline-none transition-all placeholder:text-slate-600"
+                    required
+                  />
+                  <button type="submit" className="bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green)]/80 text-black font-bold py-4 px-8 rounded-xl transition-colors whitespace-nowrap">
+                    Fetch Data
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        ) : (
+          <form onSubmit={onKaggleSubmit} className="relative glass-card border border-white/10 rounded-3xl p-10 py-16 flex flex-col items-center justify-center bg-black/40">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 border border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10 shadow-[0_0_20px_rgba(0,255,163,0.2)]">
+              <Database size={32} className="text-[var(--color-brand-green)]" />
+            </div>
+            
+            {isUploading ? (
+              <div className="w-full max-w-xs relative z-10 text-center">
+                <p className="text-xl font-bold mb-4 text-white animate-pulse">Downloading from Kaggle...</p>
+                <p className="text-slate-400 text-sm">This may take a few minutes for large datasets.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xl font-bold text-white mb-3">Import from Kaggle</p>
+                <p className="text-slate-400 mb-8 text-center max-w-md">Enter the Kaggle dataset identifier (e.g. <span className="font-mono text-white">rashadrmammadov/customer-churn-dataset</span>). Only public datasets are supported.</p>
+                
+                <div className="w-full max-w-lg flex gap-3">
+                  <input 
+                    type="text" 
+                    value={kaggleId}
+                    onChange={(e) => setKaggleId(e.target.value)}
+                    placeholder="username/dataset-name" 
+                    className="flex-1 bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white focus:border-[var(--color-brand-green)] focus:ring-1 focus:ring-[var(--color-brand-green)] focus:outline-none transition-all placeholder:text-slate-600 font-mono"
+                    required
+                  />
+                  <button type="submit" className="bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green)]/80 text-black font-bold py-4 px-8 rounded-xl transition-colors whitespace-nowrap">
+                    Download
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        )}
       </motion.div>
     </div>
   );

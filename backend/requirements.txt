@@ -87,3 +87,5 @@ urllib3==2.7.0
 uvicorn==0.48.0
 websockets==16.0
 xgboost==3.2.0
+kagglehub==0.2.8
+kagglesdk==0.1.25
