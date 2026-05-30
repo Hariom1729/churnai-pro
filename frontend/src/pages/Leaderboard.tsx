@@ -5,6 +5,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 import DataExplorer from '../components/DataExplorer';
+import { API_BASE_URL } from '../config';
 
 export default function Leaderboard() {
   const { id } = useParams();
@@ -25,7 +26,7 @@ export default function Leaderboard() {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Fetch Projects to get target_column
-        const projRes = await axios.get('http://localhost:8000/api/projects', { headers });
+        const projRes = await axios.get(`${API_BASE_URL}/api/projects`, { headers });
         const project = projRes.data.find((p: any) => String(p.id) === String(id));
         if (project && project.target_column) {
           setTargetColumn(project.target_column);
@@ -33,18 +34,18 @@ export default function Leaderboard() {
 
         // Fetch Columns
         try {
-          const colRes = await axios.get(`http://localhost:8000/api/projects/${id}/columns`, { headers });
+          const colRes = await axios.get(`${API_BASE_URL}/api/projects/${id}/columns`, { headers });
           setColumns(colRes.data.columns);
         } catch (e) {
           console.error(e);
         }
         
-        const modelsRes = await axios.get(`http://localhost:8000/api/projects/${id}/models`, { headers });
+        const modelsRes = await axios.get(`${API_BASE_URL}/api/projects/${id}/models`, { headers });
         const sorted = modelsRes.data.sort((a: any, b: any) => b.f1_score - a.f1_score);
         setModels(sorted);
         
         try {
-          const shapRes = await axios.get(`http://localhost:8000/api/projects/${id}/shap`, { headers });
+          const shapRes = await axios.get(`${API_BASE_URL}/api/projects/${id}/shap`, { headers });
           if (shapRes.data.shap_values) {
             const shapArray = Object.entries(shapRes.data.shap_values).map(([name, value]) => ({
               name,
@@ -57,7 +58,7 @@ export default function Leaderboard() {
         }
 
         try {
-          const clusterRes = await axios.get(`http://localhost:8000/api/projects/${id}/clusters`, { headers });
+          const clusterRes = await axios.get(`${API_BASE_URL}/api/projects/${id}/clusters`, { headers });
           if (clusterRes.data.clusters) {
             setClusters(clusterRes.data.clusters);
           }
@@ -66,7 +67,7 @@ export default function Leaderboard() {
         }
 
         try {
-          const recsRes = await axios.get(`http://localhost:8000/api/projects/${id}/recommendations`, { headers });
+          const recsRes = await axios.get(`${API_BASE_URL}/api/projects/${id}/recommendations`, { headers });
           if (recsRes.data.recommendations) {
             setRecommendations(recsRes.data.recommendations);
           }
@@ -88,7 +89,7 @@ export default function Leaderboard() {
     setIsExporting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8000/api/projects/${id}/export`, {
+      const response = await axios.get(`${API_BASE_URL}/api/projects/${id}/export`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });

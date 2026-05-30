@@ -3,6 +3,7 @@ import { DownloadCloud, CheckCircle2, AlertCircle, PlayCircle, Loader2 } from 'l
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 interface Model {
   id: number;
@@ -26,7 +27,7 @@ export default function Predictions() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get('http://localhost:8000/api/models', { headers });
+      const res = await axios.get(`${API_BASE_URL}/api/models`, { headers });
       setModels(res.data);
     } catch (error) {
       console.error('Error fetching models:', error);
@@ -41,7 +42,7 @@ export default function Predictions() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const res = await axios.get(`http://localhost:8000/api/models/${modelId}/predict_batch`, { 
+      const res = await axios.get(`${API_BASE_URL}/api/models/${modelId}/predict_batch`, { 
         headers,
         responseType: 'blob' 
       });

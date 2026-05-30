@@ -3,6 +3,7 @@ import { Plus, Database, FileDown, ArrowRight, Activity, Users, Target, ShieldCh
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config';
 
 export default function ProjectDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -19,7 +20,7 @@ export default function ProjectDashboard() {
   const fetchProjects = async () => {
     try {
       const currentToken = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:8000/api/projects', {
+      const res = await axios.get(`${API_BASE_URL}/api/projects`, {
         headers: { Authorization: `Bearer ${currentToken}` }
       });
       setProjects(res.data);
@@ -34,7 +35,7 @@ export default function ProjectDashboard() {
 
     try {
       const currentToken = localStorage.getItem('token');
-      await axios.post('http://localhost:8000/api/projects', {
+      await axios.post(`${API_BASE_URL}/api/projects`, {
         project_name: newProjectName
       }, {
         headers: { Authorization: `Bearer ${currentToken}` }

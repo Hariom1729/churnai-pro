@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Settings as SettingsIcon, User, Key, Save, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 interface UserProfile {
   id: number;
@@ -27,7 +28,7 @@ export default function Settings() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get('http://localhost:8000/api/users/me', { headers });
+      const res = await axios.get(`${API_BASE_URL}/api/users/me`, { headers });
       setProfile(res.data);
       setName(res.data.name || '');
       setApiKey(res.data.gemini_api_key || '');
@@ -45,7 +46,7 @@ export default function Settings() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.put('http://localhost:8000/api/users/me', {
+      await axios.put(`${API_BASE_URL}/api/users/me`, {
         name: name,
         gemini_api_key: apiKey
       }, { headers });

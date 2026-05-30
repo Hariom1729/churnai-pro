@@ -4,6 +4,7 @@ import { ArrowLeft, Play, BarChart3, Settings2, Activity, Database, Brain, Cpu, 
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import DataExplorer from '../components/DataExplorer';
+import { API_BASE_URL, WS_BASE_URL } from '../config';
 
 export default function DataAnalysis() {
   const { id } = useParams();
@@ -18,7 +19,7 @@ export default function DataAnalysis() {
     const fetchColumns = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:8000/api/projects/${id}/columns`, {
+        const res = await axios.get(`${API_BASE_URL}/api/projects/${id}/columns`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -40,7 +41,7 @@ export default function DataAnalysis() {
     try {
       const token = localStorage.getItem('token');
       
-      const ws = new WebSocket(`ws://localhost:8000/ws/train-progress/${id}`);
+      const ws = new WebSocket(`${WS_BASE_URL}/ws/train-progress/${id}`);
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         setProgress(data);
@@ -51,7 +52,7 @@ export default function DataAnalysis() {
         }
       };
 
-      await axios.post(`http://localhost:8000/api/projects/${id}/train`, 
+      await axios.post(`${API_BASE_URL}/api/projects/${id}/train`, 
         { target_column: targetColumn },
         { headers: { Authorization: `Bearer ${token}` } }
       );

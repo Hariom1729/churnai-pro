@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { UploadCloud, CheckCircle, AlertCircle, ArrowLeft, Database, Sparkles } from 'lucide-react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config';
 
 export default function UploadData() {
   const { id } = useParams();
@@ -32,7 +33,7 @@ export default function UploadData() {
     formData.append('file', file);
 
     try {
-      await axios.post(`http://localhost:8000/api/projects/${id}/upload`, formData, {
+      await axios.post(`${API_BASE_URL}/api/projects/${id}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

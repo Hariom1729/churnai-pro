@@ -3,6 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Activity, BarChart2, Zap, Save } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, ReferenceLine } from 'recharts';
+import { API_BASE_URL } from '../config';
 
 interface WhatIfSimulatorProps {
   projectId: string;
@@ -22,7 +23,7 @@ export default function WhatIfSimulator({ projectId, targetColumn, initialRowDat
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post(
-        `http://localhost:8000/api/projects/${projectId}/predict_row`, 
+        `${API_BASE_URL}/api/projects/${projectId}/predict_row`, 
         { row_data: dataToPredict, target_column: targetColumn },
         { headers: { Authorization: `Bearer ${token}` } }
       );

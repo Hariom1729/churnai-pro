@@ -3,6 +3,7 @@ import { Bot, Send, User, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import { API_BASE_URL } from '../config';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -41,7 +42,7 @@ export default function Assistant() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       // Send to backend
-      const response = await axios.post('http://localhost:8000/api/assistant/chat', {
+      const response = await axios.post(`${API_BASE_URL}/api/assistant/chat`, {
         message: userMsg,
         history: messages.filter(m => m.role !== 'assistant' || messages.indexOf(m) > 0) // exclude initial greeting if you want, or just send all
       }, { headers });

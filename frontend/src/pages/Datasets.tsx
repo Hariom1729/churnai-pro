@@ -3,6 +3,7 @@ import { Database, FileText, Upload, ChevronRight, Loader2, Table } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 interface Project {
   id: number;
@@ -26,7 +27,7 @@ export default function Datasets() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get('http://localhost:8000/api/projects', { headers });
+      const res = await axios.get(`${API_BASE_URL}/api/projects`, { headers });
       setProjects(res.data);
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -41,7 +42,7 @@ export default function Datasets() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get(`http://localhost:8000/api/projects/${project.id}/data`, { headers });
+      const res = await axios.get(`${API_BASE_URL}/api/projects/${project.id}/data`, { headers });
       // Just take the first 10 rows for preview
       setPreviewData(res.data.slice(0, 10));
     } catch (error) {

@@ -3,6 +3,7 @@ import { Cpu, Network, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 interface Model {
   id: number;
@@ -25,7 +26,7 @@ export default function Models() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get('http://localhost:8000/api/models', { headers });
+      const res = await axios.get(`${API_BASE_URL}/api/models`, { headers });
       setModels(res.data);
     } catch (error) {
       console.error('Error fetching models:', error);

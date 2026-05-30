@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Search, Filter, Database, FileSpreadsheet, Sparkles, ChevronRight, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import WhatIfSimulator from './WhatIfSimulator';
+import { API_BASE_URL } from '../config';
 
 interface DataExplorerProps {
   projectId: string;
@@ -23,7 +24,7 @@ export default function DataExplorer({ projectId, columns, targetColumn }: DataE
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:8000/api/projects/${projectId}/data`, {
+        const res = await axios.get(`${API_BASE_URL}/api/projects/${projectId}/data`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setData(res.data.data);
