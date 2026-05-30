@@ -8,7 +8,7 @@ export default function Documentation() {
     <div className="min-h-screen bg-[#020202] text-slate-300">
       {/* Top Bar */}
       <div className="max-w-4xl mx-auto px-6 pt-10">
-        <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors">
           <ArrowLeft size={16} /> Back to Home
         </Link>
       </div>
