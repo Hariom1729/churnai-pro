@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, BarChart3, Settings2 } from 'lucide-react';
 import axios from 'axios';
+import DataExplorer from '../components/DataExplorer';
 
 export default function DataAnalysis() {
   const { id } = useParams();
@@ -148,6 +149,11 @@ export default function DataAnalysis() {
                 Start AutoML Training
               </button>
             </div>
+            
+            {/* Embedded Data Explorer */}
+            {id && columns.length > 0 && (
+              <DataExplorer projectId={id} columns={columns} />
+            )}
           </div>
         )}
       </div>

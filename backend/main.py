@@ -90,6 +90,23 @@ def get_dataset_columns(project_id: int, db: Session = Depends(get_db), current_
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/projects/{project_id}/data")
+def get_dataset_data(project_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    project = db.query(models.Project).filter(models.Project.id == project_id, models.Project.user_id == current_user.id).first()
+    if not project or not project.dataset_name:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+        
+    file_location = f"uploads/project_{project_id}_{project.dataset_name}"
+    import pandas as pd
+    try:
+        # Limit to 5000 rows to prevent overwhelming the browser
+        df = pd.read_csv(file_location, nrows=5000)
+        # Replace NaN with None so it becomes valid JSON null
+        df = df.replace({pd.NA: None, pd.NaT: None, float('nan'): None})
+        return {"data": df.to_dict(orient="records")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # --- WebSockets for Training Progress ---
 class ConnectionManager:
     def __init__(self):
