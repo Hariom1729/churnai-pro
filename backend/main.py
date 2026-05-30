@@ -137,5 +137,5 @@ def get_project_models(project_id: int, db: Session = Depends(get_db), current_u
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    models = db.query(models.Model).filter(models.Model.project_id == project_id).all()
-    return models
+    project_models = db.query(models.Model).filter(models.Model.project_id == project_id).all()
+    return project_models

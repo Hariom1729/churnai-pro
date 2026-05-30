@@ -41,8 +41,16 @@ async def run_automl_pipeline(project_id: int, dataset_name: str, target_column:
         X = df.drop(target_column, axis=1)
         y = df[target_column]
 
-        # Encode target if categorical
+        # Encode target if categorical or check if it's regression
         if y.dtype == 'object' or y.dtype.name == 'category':
+            le = LabelEncoder()
+            y = le.fit_transform(y)
+        else:
+            # If it's numeric and has many unique values, it's likely a regression problem
+            if y.nunique() > 20:
+                await send_progress_update(project_id, {"status": f"Error: Target '{target_column}' is continuous. AutoML currently only supports Classification (e.g. Yes/No).", "progress": 0, "error": True})
+                return
+            # Even if it's numeric (e.g. 10, 20), make sure it's sequentially encoded for XGBoost
             le = LabelEncoder()
             y = le.fit_transform(y)
             
