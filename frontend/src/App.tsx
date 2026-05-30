@@ -40,8 +40,8 @@ function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between glass-card px-8 py-3 rounded-full">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-[var(--color-bg-deep)]/80 backdrop-blur-md border-b border-white/5">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-2 py-1">
         <Link to="/" className="flex items-center gap-3 group">
           <div className="relative w-10 h-10 flex items-center justify-center bg-black rounded-xl border border-[var(--color-brand-green)]/30 overflow-hidden">
             <div className="absolute inset-0 bg-[var(--color-brand-green)]/20 blur-xl group-hover:bg-[var(--color-brand-green)]/40 transition-all duration-500"></div>

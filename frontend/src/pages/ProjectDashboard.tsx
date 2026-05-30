@@ -18,8 +18,9 @@ export default function ProjectDashboard() {
 
   const fetchProjects = async () => {
     try {
+      const currentToken = localStorage.getItem('token');
       const res = await axios.get('http://localhost:8000/api/projects', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${currentToken}` }
       });
       setProjects(res.data);
     } catch (err) {
@@ -32,10 +33,11 @@ export default function ProjectDashboard() {
     if (!newProjectName) return;
 
     try {
+      const currentToken = localStorage.getItem('token');
       await axios.post('http://localhost:8000/api/projects', {
         project_name: newProjectName
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${currentToken}` }
       });
       setNewProjectName('');
       setShowCreate(false);
