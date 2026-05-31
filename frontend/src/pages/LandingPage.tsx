@@ -322,7 +322,7 @@ export default function LandingPage() {
                   </a>
                 </li>
                 <li>
-                  <a href="https://www.linkedin.com/in/hariom-yadav-896621240/" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-[var(--color-brand-green)] transition-colors">
+                  <a href="https://www.linkedin.com/in/hariom1729/" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-[var(--color-brand-green)] transition-colors">
                     <LinkedinIcon size={16} /> LinkedIn
                   </a>
                 </li>
